@@ -1,7 +1,9 @@
 import sqlite3
 
+DB_PATH = "database/db.sqlite3"
+
 def connect():
-    return sqlite3.connect("database/db.sqlite3")
+    return sqlite3.connect(DB_PATH)
 
 
 def create_table():
@@ -21,6 +23,14 @@ def create_table():
     conn.close()
 
 
-if __name__ == "__main__":
-    create_table()
-    print("Database initialized")
+def insert_bin_data(bin_id, fill_level):
+    conn = connect()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO bins (bin_id, fill_level)
+    VALUES (?, ?)
+    """, (bin_id, fill_level))
+
+    conn.commit()
+    conn.close()
