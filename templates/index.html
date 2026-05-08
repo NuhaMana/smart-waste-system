@@ -2,26 +2,53 @@
 <html>
 <head>
     <title>Smart Waste Dashboard</title>
+    <meta http-equiv="refresh" content="5">
 </head>
 <body>
 
     <h1>Smart Waste Monitoring System</h1>
 
-    <table border="1" cellpadding="10">
-        <tr>
-            <th>Bin ID</th>
-            <th>Fill Level (%)</th>
-            <th>Timestamp</th>
-        </tr>
+  <style>
+    table {
+        margin-top: 20px;
+        font-family: Arial;
+    }
+    th {
+        background-color: #333;
+        color: white;
+    }
+    td, th {
+        text-align: center;
+    }
+</style> 
 
-        {% for row in data %}
-        <tr>
-            <td>{{ row[0] }}</td>
-            <td>{{ row[1] }}</td>
-            <td>{{ row[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+<table border="1" cellpadding="10" style="border-collapse: collapse; width: 80%;">
+    <tr>
+        <th>Bin ID</th>
+        <th>Fill Level (%)</th>
+        <th>Status</th>
+        <th>Timestamp</th>
+    </tr>
+
+    {% for row in data %}
+    <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}</td>
+
+        <td>
+            {% if row[1] >= 80 %}
+                🔴 FULL
+            {% elif row[1] >= 50 %}
+                🟠 MID
+            {% else %}
+                🟢 LOW
+            {% endif %}
+        </td>
+
+        <td>{{ row[2] }}</td>
+    </tr>
+    {% endfor %}
+</table>
 
 </body>
 </html>
