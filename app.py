@@ -57,7 +57,42 @@ def analytics():
 
 @app.route("/routes")
 def routes():
-    return render_template("routes.html")
+
+    data = get_data()
+
+    latest_bins = {}
+
+    # Keep latest entry per bin
+    for row in data:
+        bin_id = row[0]
+
+        if bin_id not in latest_bins:
+            latest_bins[bin_id] = row
+
+    priority_bins = []
+
+    for row in latest_bins.values():
+
+        fill_level = row[1]
+
+        if fill_level >= 80:
+
+            priority_bins.append({
+                "bin_id": row[0],
+                "fill_level": fill_level,
+                "timestamp": row[2]
+            })
+
+    # Highest fill level first
+    priority_bins.sort(
+        key=lambda x: x["fill_level"],
+        reverse=True
+    )
+
+    return render_template(
+        "routes.html",
+        priority_bins=priority_bins
+    )
 
 
 if __name__ == "__main__":

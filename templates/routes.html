@@ -2,8 +2,70 @@
 
 {% block content %}
 
-<h1>Route Optimization</h1>
+<h1 class="mb-4">Smart Route Prioritization</h1>
 
-<p>Priority collection routes will appear here.</p>
+<div class="card shadow">
+
+    <div class="card-header bg-danger text-white">
+        Urgent Collection Bins
+    </div>
+
+    <div class="card-body">
+
+        {% if priority_bins %}
+
+        <table class="table table-striped table-hover">
+
+            <thead class="table-dark">
+
+                <tr>
+                    <th>Priority</th>
+                    <th>Bin ID</th>
+                    <th>Fill Level (%)</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for bin in priority_bins %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>{{ bin.bin_id }}</td>
+
+                    <td>{{ bin.fill_level }}</td>
+
+                    <td>
+                        <span class="badge bg-danger">
+                            HIGH PRIORITY
+                        </span>
+                    </td>
+
+                    <td>{{ bin.timestamp }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+            <div class="alert alert-success">
+                No urgent bins currently require collection.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
 
 {% endblock %}
