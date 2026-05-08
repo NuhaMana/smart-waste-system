@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 import sqlite3
+import folium
 
 app = Flask(__name__)
 
@@ -94,6 +95,43 @@ def routes():
         priority_bins=priority_bins
     )
 
+@app.route("/map")
+def map_view():
+
+    data = get_data()
+
+    latest_bins = {}
+
+    for row in data:
+        bin_id = row[0]
+        latest_bins[bin_id] = row
+
+    m = folium.Map(location=[6.9, 79.9], zoom_start=12)
+
+    for row in latest_bins.values():
+
+        bin_id = row[0]
+        fill_level = row[1]
+
+        lat = 6.9 + (hash(bin_id) % 100) * 0.001
+        lon = 79.9 + (hash(bin_id) % 100) * 0.001
+
+        if fill_level >= 80:
+            color = "red"
+        elif fill_level >= 50:
+            color = "orange"
+        else:
+            color = "green"
+
+        folium.Marker(
+            location=[lat, lon],
+            popup=f"{bin_id} - {fill_level}%",
+            icon=folium.Icon(color=color)
+        ).add_to(m)
+
+    return m._repr_html_()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
