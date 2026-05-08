@@ -2,8 +2,60 @@
 
 {% block content %}
 
-<h1>Analytics Page</h1>
+<h1 class="mb-4">Analytics Dashboard</h1>
 
-<p>Charts and analytics will be added here.</p>
+<div class="card shadow">
+
+    <div class="card-header bg-primary text-white">
+        Bin Fill Level Analytics
+    </div>
+
+    <div class="card-body">
+
+        <canvas id="binChart"></canvas>
+
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const ctx = document.getElementById('binChart');
+
+new Chart(ctx, {
+
+    type: 'bar',
+
+    data: {
+
+        labels: {{ labels | tojson }},
+
+        datasets: [{
+            label: 'Fill Level (%)',
+            data: {{ values | tojson }},
+            borderWidth: 1
+        }]
+
+    },
+
+    options: {
+
+        responsive: true,
+
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+
+    }
+
+});
+
+</script>
 
 {% endblock %}

@@ -30,8 +30,30 @@ def dashboard():
 
 @app.route("/analytics")
 def analytics():
-    return render_template("analytics.html")
 
+    data = get_data()
+
+    latest_bins = {}
+
+    for row in data:
+        bin_id = row[0]
+
+        # keep only latest entry per bin
+        if bin_id not in latest_bins:
+            latest_bins[bin_id] = row
+
+    chart_labels = []
+    chart_values = []
+
+    for row in latest_bins.values():
+        chart_labels.append(row[0])
+        chart_values.append(row[1])
+
+    return render_template(
+        "analytics.html",
+        labels=chart_labels,
+        values=chart_values
+    )
 
 @app.route("/routes")
 def routes():
