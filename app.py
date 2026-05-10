@@ -108,6 +108,8 @@ def map_view():
 
     m = folium.Map(location=[6.9, 79.9], zoom_start=12)
 
+    high_priority_locations = []
+
     for row in latest_bins.values():
 
         bin_id = row[0]
@@ -118,8 +120,12 @@ def map_view():
 
         if fill_level >= 80:
             color = "red"
+
+            high_priority_locations.append([lat, lon])
+
         elif fill_level >= 50:
             color = "orange"
+
         else:
             color = "green"
 
@@ -127,6 +133,16 @@ def map_view():
             location=[lat, lon],
             popup=f"{bin_id} - {fill_level}%",
             icon=folium.Icon(color=color)
+        ).add_to(m)
+
+    # Draw smart collection route
+    if len(high_priority_locations) > 1:
+
+        folium.PolyLine(
+            high_priority_locations,
+            color="blue",
+            weight=4,
+            opacity=0.8
         ).add_to(m)
 
     return m._repr_html_()
