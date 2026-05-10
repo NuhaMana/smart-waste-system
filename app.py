@@ -25,8 +25,38 @@ def get_data():
 
 @app.route("/")
 def dashboard():
+
     data = get_data()
-    return render_template("dashboard.html", data=data)
+
+    alerts = []
+
+    latest_bins = {}
+
+    # Keep latest entry per bin
+    for row in data:
+
+        bin_id = row[0]
+
+        if bin_id not in latest_bins:
+            latest_bins[bin_id] = row
+
+    # Generate alerts
+    for row in latest_bins.values():
+
+        fill_level = row[1]
+
+        if fill_level >= 80:
+
+            alerts.append({
+                "bin_id": row[0],
+                "fill_level": fill_level
+            })
+
+    return render_template(
+        "dashboard.html",
+        data=data,
+        alerts=alerts
+    )
 
 
 @app.route("/analytics")

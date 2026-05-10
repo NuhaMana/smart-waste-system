@@ -3,6 +3,25 @@
 {% block content %}
 
 <h1 class="mb-4">Dashboard</h1>
+{% if alerts %}
+
+<div class="alert alert-danger">
+
+    <h4>Critical Alerts</h4>
+
+    {% for alert in alerts %}
+
+        <p>
+            ⚠ {{ alert.bin_id }}
+            is critically full
+            ({{ alert.fill_level }}%)
+        </p>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
 
 <!-- Dashboard Cards -->
 <div class="row mb-4">
