@@ -28,36 +28,48 @@ def dashboard():
 
     data = get_data()
 
-    alerts = []
-
     latest_bins = {}
 
-    # Keep latest entry per bin
     for row in data:
-
         bin_id = row[0]
 
         if bin_id not in latest_bins:
             latest_bins[bin_id] = row
 
-    # Generate alerts
+    alerts = []
+
+    total_fill = 0
+    critical_count = 0
+
     for row in latest_bins.values():
 
         fill_level = row[1]
 
+        total_fill += fill_level
+
         if fill_level >= 80:
 
-            alerts.append({
-                "bin_id": row[0],
-                "fill_level": fill_level
-            })
+            critical_count += 1
+
+            alerts.append(
+                f"⚠ {row[0]} is critically full ({fill_level}%)"
+            )
+
+    total_bins = len(latest_bins)
+
+    average_fill = 0
+
+    if total_bins > 0:
+        average_fill = round(total_fill / total_bins, 1)
 
     return render_template(
         "dashboard.html",
         data=data,
-        alerts=alerts
+        alerts=alerts,
+        total_bins=total_bins,
+        critical_count=critical_count,
+        average_fill=average_fill
     )
-
 
 @app.route("/analytics")
 def analytics():

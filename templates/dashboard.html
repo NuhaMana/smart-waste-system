@@ -2,67 +2,62 @@
 
 {% block content %}
 
-<h1 class="mb-4">Dashboard</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <h2 class="fw-bold">Smart Waste Monitoring Dashboard</h2>
+
+    <span class="badge bg-success fs-6">
+        ● SYSTEM LIVE
+    </span>
+
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5>🗑️ Total Bins</h5>
+                <h2 class="text-primary">{{ total_bins }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5>⚠️ Critical Bins</h5>
+                <h2 class="text-danger">{{ critical_count }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+                <h5>📊 Avg Fill Level</h5>
+                <h2 class="text-success">{{ average_fill }}%</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 {% if alerts %}
 
-<div class="alert alert-danger">
+<div class="alert alert-danger shadow-sm">
 
-    <h4>Critical Alerts</h4>
+    <h5 class="mb-3">🚨 Critical Alerts</h5>
 
     {% for alert in alerts %}
-
-        <p>
-            ⚠ {{ alert.bin_id }}
-            is critically full
-            ({{ alert.fill_level }}%)
-        </p>
-
+        <div>⚠ {{ alert }}</div>
     {% endfor %}
 
 </div>
 
 {% endif %}
 
-<!-- Dashboard Cards -->
-<div class="row mb-4">
 
-    <div class="col-md-4">
-        <div class="card text-bg-primary shadow">
-            <div class="card-body">
-                <h5>Total Records</h5>
-                <h2>{{ data|length }}</h2>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card text-bg-danger shadow">
-            <div class="card-body">
-                <h5>Critical Bins</h5>
-
-                <h2>
-                    {{
-                        data
-                        | selectattr(1, 'ge', 80)
-                        | list
-                        | length
-                    }}
-                </h2>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card text-bg-success shadow">
-            <div class="card-body">
-                <h5>System Status</h5>
-                <h2>ACTIVE</h2>
-            </div>
-        </div>
-    </div>
-
-</div>
 
 <!-- Monitoring Table -->
 <div class="card shadow">
@@ -73,7 +68,7 @@
 
     <div class="card-body">
 
-        <table class="table table-striped table-hover">
+        <table class="table table-striped table-bordered table-hover align-middle">
 
             <thead class="table-dark">
 
