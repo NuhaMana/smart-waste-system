@@ -1,6 +1,13 @@
 from flask import Flask, render_template
 import sqlite3
 import folium
+BIN_LOCATIONS = {
+    "BIN-001": (6.900, 79.850),
+    "BIN-002": (6.905, 79.860),
+    "BIN-003": (6.910, 79.870),
+    "BIN-004": (6.915, 79.880),
+    "BIN-005": (6.920, 79.890),
+}
 
 app = Flask(__name__)
 
@@ -148,26 +155,33 @@ def map_view():
         bin_id = row[0]
         latest_bins[bin_id] = row
 
-    m = folium.Map(location=[6.9, 79.9], zoom_start=12)
+    m = folium.Map(location=[6.905, 79.865], zoom_start=14)
 
-    high_priority_locations = []
+    BIN_LOCATIONS = {
+        "BIN-001": (6.900, 79.850),
+        "BIN-002": (6.905, 79.860),
+        "BIN-003": (6.910, 79.870),
+        "BIN-004": (6.915, 79.880),
+        "BIN-005": (6.920, 79.890),
+    }
+
+    critical_bins = []
 
     for row in latest_bins.values():
 
         bin_id = row[0]
         fill_level = row[1]
 
-        lat = 6.9 + (hash(bin_id) % 100) * 0.001
-        lon = 79.9 + (hash(bin_id) % 100) * 0.001
+        if bin_id not in BIN_LOCATIONS:
+            continue
+
+        lat, lon = BIN_LOCATIONS[bin_id]
 
         if fill_level >= 80:
             color = "red"
-
-            high_priority_locations.append([lat, lon])
-
+            critical_bins.append((lat, lon))
         elif fill_level >= 50:
             color = "orange"
-
         else:
             color = "green"
 
@@ -177,14 +191,35 @@ def map_view():
             icon=folium.Icon(color=color)
         ).add_to(m)
 
-    # Draw smart collection route
-    if len(high_priority_locations) > 1:
+    # ROUTE OPTIMIZATION (NEAREST NEIGHBOUR)
+    if len(critical_bins) >= 2:
+
+        import math
+
+        def distance(a, b):
+            return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+
+        route = []
+
+        current = critical_bins.pop(0)
+        route.append(current)
+
+        while critical_bins:
+
+            next_bin = min(
+                critical_bins,
+                key=lambda x: distance(current, x)
+            )
+
+            route.append(next_bin)
+            critical_bins.remove(next_bin)
+            current = next_bin
 
         folium.PolyLine(
-            high_priority_locations,
+            locations=route,
             color="blue",
-            weight=4,
-            opacity=0.8
+            weight=5,
+            opacity=0.9
         ).add_to(m)
 
     return m._repr_html_()
