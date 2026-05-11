@@ -148,6 +148,26 @@ def routes():
 @app.route("/map")
 def map_view():
 
+    import math
+    from folium import Element
+
+    def haversine(a, b):
+        R = 6371
+
+        lat1, lon1 = a
+        lat2, lon2 = b
+
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+
+        dphi = math.radians(lat2 - lat1)
+        dlambda = math.radians(lon2 - lon1)
+
+        x = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+
+        return 2 * R * math.atan2(math.sqrt(x), math.sqrt(1-x))
+
+
     data = get_data()
 
     latest_bins = {}
@@ -179,7 +199,7 @@ def map_view():
 
         lat, lon = BIN_LOCATIONS[bin_id]
 
-        if fill_level >= 80:
+        if fill_level >= 60:
             color = "red"
             critical_bins.append([lat, lon])
         elif fill_level >= 50:
@@ -193,14 +213,8 @@ def map_view():
             icon=folium.Icon(color=color)
         ).add_to(m)
 
-    # ROUTE + ANIMATION
+    # ROUTE OPTIMIZATION
     if len(critical_bins) >= 2:
-
-        import math
-        from folium import Element
-
-        def distance(a, b):
-            return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
         route = []
 
@@ -211,46 +225,31 @@ def map_view():
 
             next_bin = min(
                 critical_bins,
-                key=lambda x: distance(current, x)
+                key=lambda x: haversine(current, x)
             )
 
             route.append(next_bin)
             critical_bins.remove(next_bin)
             current = next_bin
 
-        # Draw route line
+        # Distance + time calculation
+        total_distance = 0
+
+        for i in range(len(route)-1):
+            total_distance += haversine(route[i], route[i+1])
+
+        estimated_time = (total_distance / 25) * 60
+
+        print("Route Distance:", round(total_distance, 2), "km")
+        print("Estimated Time:", round(estimated_time, 1), "minutes")
+
+        # Draw route
         folium.PolyLine(
             locations=route,
             color="blue",
             weight=5,
             opacity=0.8
         ).add_to(m)
-
-        # Moving marker animation
-        animated_js = f"""
-        <script>
-
-            var route = {route};
-
-            var marker = L.marker(route[0]).addTo(window.map);
-
-            var i = 0;
-
-            function moveMarker() {{
-                marker.setLatLng(route[i]);
-                i++;
-
-                if (i >= route.length) {{
-                    i = 0;
-                }}
-            }}
-
-            setInterval(moveMarker, 1200);
-
-        </script>
-        """
-
-        m.get_root().html.add_child(Element(animated_js))
 
     return m._repr_html_()
 if __name__ == "__main__":
