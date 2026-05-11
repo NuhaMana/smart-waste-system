@@ -69,13 +69,14 @@ def dashboard():
     if total_bins > 0:
         average_fill = round(total_fill / total_bins, 1)
 
+        
     return render_template(
         "dashboard.html",
         data=data,
         alerts=alerts,
         total_bins=total_bins,
         critical_count=critical_count,
-        average_fill=average_fill
+        average_fill=average_fill    
     )
 
 @app.route("/analytics")
