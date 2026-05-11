@@ -168,6 +168,7 @@ def map_view():
 
     critical_bins = []
 
+    # MARKERS
     for row in latest_bins.values():
 
         bin_id = row[0]
@@ -180,7 +181,7 @@ def map_view():
 
         if fill_level >= 80:
             color = "red"
-            critical_bins.append((lat, lon))
+            critical_bins.append([lat, lon])
         elif fill_level >= 50:
             color = "orange"
         else:
@@ -192,10 +193,11 @@ def map_view():
             icon=folium.Icon(color=color)
         ).add_to(m)
 
-    # ROUTE OPTIMIZATION (NEAREST NEIGHBOUR)
+    # ROUTE + ANIMATION
     if len(critical_bins) >= 2:
 
         import math
+        from folium import Element
 
         def distance(a, b):
             return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
@@ -216,15 +218,41 @@ def map_view():
             critical_bins.remove(next_bin)
             current = next_bin
 
+        # Draw route line
         folium.PolyLine(
             locations=route,
             color="blue",
             weight=5,
-            opacity=0.9
+            opacity=0.8
         ).add_to(m)
 
-    return m._repr_html_()
+        # Moving marker animation
+        animated_js = f"""
+        <script>
 
+            var route = {route};
+
+            var marker = L.marker(route[0]).addTo(window.map);
+
+            var i = 0;
+
+            function moveMarker() {{
+                marker.setLatLng(route[i]);
+                i++;
+
+                if (i >= route.length) {{
+                    i = 0;
+                }}
+            }}
+
+            setInterval(moveMarker, 1200);
+
+        </script>
+        """
+
+        m.get_root().html.add_child(Element(animated_js))
+
+    return m._repr_html_()
 if __name__ == "__main__":
     app.run(debug=True)
 
