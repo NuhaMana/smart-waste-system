@@ -149,7 +149,7 @@ def routes():
 def map_view():
 
     import math
-    from folium import Element
+    import json
 
     def haversine(a, b):
         R = 6371
@@ -174,9 +174,10 @@ def map_view():
 
     for row in data:
         bin_id = row[0]
-        latest_bins[bin_id] = row
 
-    m = folium.Map(location=[6.905, 79.865], zoom_start=14)
+        if bin_id not in latest_bins:
+            latest_bins[bin_id] = row
+
 
     BIN_LOCATIONS = {
         "BIN-001": (6.900, 79.850),
@@ -186,9 +187,10 @@ def map_view():
         "BIN-005": (6.920, 79.890),
     }
 
+    bins_data = []
+
     critical_bins = []
 
-    # MARKERS
     for row in latest_bins.values():
 
         bin_id = row[0]
@@ -199,26 +201,22 @@ def map_view():
 
         lat, lon = BIN_LOCATIONS[bin_id]
 
+        bins_data.append({
+            "id": bin_id,
+            "fill": fill_level,
+            "lat": lat,
+            "lon": lon
+        })
+
         if fill_level >= 80:
-            color = "red"
             critical_bins.append([lat, lon])
-        elif fill_level >= 50:
-            color = "orange"
-        else:
-            color = "green"
 
-        folium.Marker(
-            location=[lat, lon],
-            popup=f"{bin_id} - {fill_level}%",
-            icon=folium.Icon(color=color)
-        ).add_to(m)
+    route = []
 
-    # ROUTE OPTIMIZATION
     if len(critical_bins) >= 2:
 
-        route = []
-
         current = critical_bins.pop(0)
+
         route.append(current)
 
         while critical_bins:
@@ -229,29 +227,29 @@ def map_view():
             )
 
             route.append(next_bin)
+
             critical_bins.remove(next_bin)
+
             current = next_bin
 
-        # Distance + time calculation
         total_distance = 0
 
         for i in range(len(route)-1):
-            total_distance += haversine(route[i], route[i+1])
+            total_distance += haversine(
+                route[i],
+                route[i+1]
+            )
 
         estimated_time = (total_distance / 25) * 60
 
         print("Route Distance:", round(total_distance, 2), "km")
         print("Estimated Time:", round(estimated_time, 1), "minutes")
 
-        # Draw route
-        folium.PolyLine(
-            locations=route,
-            color="blue",
-            weight=5,
-            opacity=0.8
-        ).add_to(m)
-
-    return m._repr_html_()
+    return render_template(
+        "map.html",
+        bins=json.dumps(bins_data),
+        route=json.dumps(route)
+    )
 if __name__ == "__main__":
     app.run(debug=True)
 
