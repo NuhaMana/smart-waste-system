@@ -199,7 +199,7 @@ def map_view():
 
         lat, lon = BIN_LOCATIONS[bin_id]
 
-        if fill_level >= 60:
+        if fill_level >= 80:
             color = "red"
             critical_bins.append([lat, lon])
         elif fill_level >= 50:
