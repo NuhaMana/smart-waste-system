@@ -91,13 +91,16 @@ bins.forEach(function(bin) {
     // ROUTE LINE
     if (route.length >= 2) {
 
-        var polyline = L.polyline(
-            route,
-            {
-                color: 'bl/ue',
-                weight: 5
-            }
-        ).addTo(map);
+    var polyline = L.polyline(
+    route,
+    {
+        color: '#0066ff',
+        weight: 6,
+        opacity: 1
+    }
+    ).addTo(map);
+
+map.fitBounds(polyline.getBounds());
 
         // TRUCK ICON
        var truckIcon = L.icon({
@@ -110,19 +113,43 @@ bins.forEach(function(bin) {
             { icon: truckIcon }
         ).addTo(map);
 
-        var i = 0;
+        var currentSegment = 0;
+var progress = 0;
 
-        setInterval(function() {
+function animateTruck() {
 
-            truck.setLatLng(route[i]);
+    if (route.length < 2) {
+        return;
+    }
 
-            i++;
+    var start = route[currentSegment];
+    var end = route[currentSegment + 1];
 
-            if (i >= route.length) {
-                i = 0;
-            }
+    var lat =
+        start[0] + (end[0] - start[0]) * progress;
 
-        }, 1000);
+    var lng =
+        start[1] + (end[1] - start[1]) * progress;
+
+    truck.setLatLng([lat, lng]);
+
+    progress += 0.01;
+
+    if (progress >= 1) {
+
+        progress = 0;
+
+        currentSegment++;
+
+        if (currentSegment >= route.length - 1) {
+            currentSegment = 0;
+        }
+    }
+
+    requestAnimationFrame(animateTruck);
+}
+
+animateTruck();
 
     }
 
