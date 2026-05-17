@@ -25,12 +25,48 @@
             width: 100%;
         }
 
+        #info-panel {
+
+    position: absolute;
+    top: 20px;
+    right: 20px;
+
+    z-index: 1000;
+
+    background: white;
+
+    padding: 15px;
+
+    border-radius: 10px;
+
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+
+    width: 220px;
+
+    font-family: Arial;
+}
+
     </style>
 </head>
 
 <body>
 
 <div id="map"></div>
+<div id="info-panel">
+
+    <h3>Smart Collection Route</h3>
+
+    <p>
+        <strong>Distance:</strong>
+        {{ total_distance }} km
+    </p>
+
+    <p>
+        <strong>Estimated Time:</strong>
+        {{ estimated_time }} mins
+    </p>
+
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -104,8 +140,8 @@ map.fitBounds(polyline.getBounds());
 
         // TRUCK ICON
        var truckIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/744/744465.png',
-        iconSize: [45, 45]
+        iconUrl: '/static/truck.png.jpg',
+        iconSize: [50, 50]
        });
 
         var truck = L.marker(

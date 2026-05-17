@@ -241,6 +241,8 @@ def map_view():
             )
 
         estimated_time = (total_distance / 25) * 60
+        total_distance = round(total_distance, 2)
+        estimated_time = round(estimated_time, 1)
 
         print("Route Distance:", round(total_distance, 2), "km")
         print("Estimated Time:", round(estimated_time, 1), "minutes")
@@ -248,8 +250,12 @@ def map_view():
     return render_template(
         "map.html",
         bins=json.dumps(bins_data),
-        route=json.dumps(route)
+        route=json.dumps(route),
+        total_distance=total_distance if route else 0,
+        estimated_time=estimated_time if route else 0
     )
+        
+    
 if __name__ == "__main__":
     app.run(debug=True)
 
