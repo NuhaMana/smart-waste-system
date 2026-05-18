@@ -4,6 +4,37 @@
 
 <h1 class="mb-4">Analytics Dashboard</h1>
 
+<div class="row mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6>Total Bins</h6>
+                <h3>{{ labels|length }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6>Max Fill Level</h6>
+                <h3 id="maxFill"></h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6>Avg Fill Level</h6>
+                <h3 id="avgFill"></h3>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 <div class="card shadow">
 
     <div class="card-header bg-primary text-white">
@@ -18,44 +49,68 @@
 
 </div>
 
+<div class="card shadow mt-4">
+
+    <div class="card-header bg-dark text-white">
+        Waste Distribution Overview
+    </div>
+
+    <div class="card-body">
+        <canvas id="pieChart"></canvas>
+    </div>
+
+</div>
+
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+const values = {{ values | tojson }};
 
-const ctx = document.getElementById('binChart');
+/* KPI CALCULATIONS */
+const maxFill = Math.max(...values);
+const avgFill = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
 
-new Chart(ctx, {
+document.getElementById("maxFill").innerText = maxFill + "%";
+document.getElementById("avgFill").innerText = avgFill + "%";
 
+/* BAR CHART */
+new Chart(document.getElementById('binChart'), {
     type: 'bar',
-
     data: {
-
         labels: {{ labels | tojson }},
-
         datasets: [{
             label: 'Fill Level (%)',
-            data: {{ values | tojson }},
+            data: values,
             borderWidth: 1
         }]
-
     },
-
     options: {
-
         responsive: true,
-
         scales: {
             y: {
                 beginAtZero: true,
                 max: 100
             }
         }
-
     }
-
 });
 
+/* PIE CHART */
+const low = values.filter(v => v < 50).length;
+const medium = values.filter(v => v >= 50 && v < 80).length;
+const high = values.filter(v => v >= 80).length;
+
+new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Low', 'Medium', 'Critical'],
+        datasets: [{
+            data: [low, medium, high],
+            backgroundColor: ['green', 'orange', 'red']
+        }]
+    }
+});
 </script>
 
 {% endblock %}

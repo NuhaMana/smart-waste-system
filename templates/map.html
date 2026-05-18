@@ -139,9 +139,10 @@ bins.forEach(function(bin) {
 map.fitBounds(polyline.getBounds());
 
         // TRUCK ICON
-       var truckIcon = L.icon({
-        iconUrl: '/static/truck.png.jpg',
-        iconSize: [50, 50]
+       var truckIcon = L.divIcon({
+        html: '<div style="font-size:40px; transform: rotate(0deg);">🚛</div>',
+        className: '',
+        iconSize: [40, 40]
        });
 
         var truck = L.marker(
