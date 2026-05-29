@@ -42,13 +42,13 @@
 
                 <tr>
                     <td>Traditional Fixed Collection</td>
-                    <td>12 km</td>
+                    <td>{{ traditional_distance }} km</td>
                     <td>35 mins</td>
                 </tr>
 
                 <tr>
                     <td>IoT Smart Optimized Collection</td>
-                    <td>6 km</td>
+                    <td>{{ optimized_distance }} km</td>
                     <td>18 mins</td>
                 </tr>
 
@@ -59,7 +59,7 @@
         <div class="alert alert-success mt-3">
 
             Smart route optimization reduced unnecessary
-            collection travel by approximately <b>50%</b>.
+            collection travel by approximately <b>{{ efficiency }}%</b>.
 
         </div>
 
@@ -79,16 +79,16 @@
         <ul class="list-group">
 
             <li class="list-group-item">
-                BIN-002 is approaching critical level and should be prioritized soon.
-            </li>
+    Critical bins detected: {{ critical_bins }}
+</li>
 
-            <li class="list-group-item">
-                Dynamic routing is currently reducing unnecessary collection trips.
-            </li>
+<li class="list-group-item">
+    {{ recommendation }}
+</li>
 
-            <li class="list-group-item">
-                Real-time monitoring improves waste collection response efficiency.
-            </li>
+<li class="list-group-item">
+    Dynamic routing optimization is active.
+</li>
 
         </ul>
 

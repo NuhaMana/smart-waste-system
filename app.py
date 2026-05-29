@@ -89,7 +89,6 @@ def analytics():
     for row in data:
         bin_id = row[0]
 
-        # keep only latest entry per bin
         if bin_id not in latest_bins:
             latest_bins[bin_id] = row
 
@@ -100,10 +99,46 @@ def analytics():
         chart_labels.append(row[0])
         chart_values.append(row[1])
 
+    total_bins = len(chart_values)
+
+    critical_bins = 0
+
+    for value in chart_values:
+        if value >= 80:
+            critical_bins += 1
+
+    traditional_distance = total_bins * 2
+    optimized_distance = max(2, critical_bins * 2)
+
+    efficiency = round(
+        ((traditional_distance - optimized_distance)
+        / traditional_distance) * 100
+    )
+
+    if critical_bins == 0:
+        recommendation = (
+            "All bins are currently operating within safe levels."
+        )
+
+    elif critical_bins <= 2:
+        recommendation = (
+            "Selective smart collection is recommended for critical bins."
+        )
+
+    else:
+        recommendation = (
+            "Multiple critical bins detected. Immediate optimized collection required."
+        )
+
     return render_template(
         "analytics.html",
         labels=chart_labels,
-        values=chart_values
+        values=chart_values,
+        critical_bins=critical_bins,
+        efficiency=efficiency,
+        recommendation=recommendation,
+        traditional_distance=traditional_distance,
+        optimized_distance=optimized_distance
     )
 
 @app.route("/routes")
