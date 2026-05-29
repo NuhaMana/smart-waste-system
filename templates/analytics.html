@@ -1,9 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+canvas {
+    background: rgba(255,255,255,0.02);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+body {
+    background: #1c5305;
+    color: #290aa70e;
+}
+
+.card {
+    background: #121a2a;
+    color: #e6e6e6;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.alert {
+    border-radius: 12px;
+}
+
+h1, h2, h3, h4, h5 {
+    color: #910505;
+}
+</style>
 
 <h1 class="mb-4">Analytics Dashboard</h1>
-<div class="alert alert-primary text-center shadow-sm">
+
+<div class="alert text-center shadow-sm"
+     style="
+        background: {% if critical_bins == 0 %}#0f5132{% elif critical_bins <= 2 %}#664d03{% else %}#842029{% endif %};
+        color: white;
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.4);
+     ">
     <h5 class="mb-0">
         System Status:
         {% if critical_bins == 0 %}
@@ -18,21 +56,37 @@
 
 <div class="row mb-4 text-center">
 
-    <div class="col-md-6">
-        <div class="card shadow border-0">
-            <div class="card-body">
-                <h6>Route Efficiency Score</h6>
-                <h3>{{ efficiency }}%</h3>
-            </div>
+    <div class="col-md-4">
+        <div class="card p-3"
+             style="box-shadow: 0 0 15px rgba(0,255,100,0.1);">
+            <h6>Route Efficiency Score</h6>
+            <h2 style="color:#00ff88;">{{ efficiency }}%</h2>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card shadow border-0">
-            <div class="card-body">
-                <h6>Critical Bins</h6>
-                <h3>{{ critical_bins }}</h3>
-            </div>
+    <div class="col-md-4">
+        <div class="card p-3"
+             style="box-shadow: 0 0 15px rgba(255,0,0,0.1);">
+            <h6>Critical Bins</h6>
+            <h2 style="color:#ff4d4d;">{{ critical_bins }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-3"
+             style="box-shadow: 0 0 15px rgba(0,150,255,0.1);">
+            <h6>Efficiency Gauge</h6>
+
+            <h2>
+                {% if critical_bins == 0 %}
+                    🟢 STABLE
+                {% elif critical_bins <= 2 %}
+                    🟡 ACTIVE
+                {% else %}
+                    🔴 ALERT
+                {% endif %}
+            </h2>
+
         </div>
     </div>
 
@@ -55,25 +109,46 @@
         </div>
     </div>
 
-    <!-- INSIGHT PANEL -->
+    <!-- AI SYSTEM PANEL -->
     <div class="col-md-4">
 
         <div class="card shadow h-100">
 
             <div class="card-header bg-dark text-white">
-                System Insight
+                AI System Status
             </div>
 
             <div class="card-body">
+<div class="text-info mb-3">
+    <b>System Time:</b><br>
+    <span id="clock"></span>
+</div>
 
-                <p><b>Recommendation:</b></p>
-                <p>{{ recommendation }}</p>
+<hr>
+
+                <p><b>System Status:</b></p>
+
+                <p>
+                {% if critical_bins == 0 %}
+                    All systems operating within safe limits.
+                {% elif critical_bins <= 2 %}
+                    Moderate waste accumulation detected.
+                {% else %}
+                    CRITICAL ALERT: Immediate dispatch required.
+                {% endif %}
+                </p>
 
                 <hr>
 
                 <p><b>Traditional Route:</b> {{ traditional_distance }} km</p>
                 <p><b>Optimized Route:</b> {{ optimized_distance }} km</p>
 
+                <hr>
+
+                <p><b>Efficiency Gain:</b>
+                    <span style="color:#00ff88;">{{ efficiency }}%</span>
+                </p>
+
             </div>
 
         </div>
@@ -82,54 +157,89 @@
 
 </div>
 
-<div class="card shadow mt-4">
+<div class="mt-3">
+    <p><b>Network Load Visualization</b></p>
 
-    <div class="card-header bg-success text-white">
-        Smart Collection Efficiency
+    <div class="d-flex gap-1">
+        {% for i in range(5) %}
+            <div style="width:20px;height:20px;
+                background:{% if i < critical_bins %}red{% else %}lightgray{% endif %};
+                border-radius:3px;"></div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card shadow mt-4 border-0">
+
+    <div class="card-header bg-gradient bg-success text-white">
+        Smart Collection Performance Intelligence
     </div>
 
     <div class="card-body">
 
-        <table class="table table-bordered text-center">
+        <div class="row text-center">
 
-            <thead class="table-light">
+            <!-- TRADITIONAL -->
+            <div class="col-md-4">
+                <div class="p-3 rounded shadow-sm border">
 
-                <tr>
-                    <th>Collection Method</th>
-                    <th>Estimated Distance</th>
-                    <th>Estimated Time</th>
-                </tr>
+                    <div class="text-danger fw-bold">Traditional System</div>
+                    <h2 class="mt-2">{{ traditional_distance }} km</h2>
 
-            </thead>
+                    <div class="text-muted">Fixed routing logic</div>
 
-            <tbody>
+                    <div class="mt-3">
+                        <span class="badge bg-danger">Inefficient</span>
+                    </div>
 
-                <tr>
-                    <td>Traditional Fixed Collection</td>
-                    <td>{{ traditional_distance }} km</td>
-                    <td>35 mins</td>
-                </tr>
+                </div>
+            </div>
 
-                <tr>
-                    <td>IoT Smart Optimized Collection</td>
-                    <td>{{ optimized_distance }} km</td>
-                    <td>18 mins</td>
-                </tr>
+            <!-- CENTER INSIGHT -->
+            <div class="col-md-4">
+                <div class="p-4 rounded shadow bg-dark text-white">
 
-            </tbody>
+                    <div class="fw-bold">AI Optimization Gain</div>
 
-        </table>
+                    <div style="font-size:40px; font-weight:bold;" class="text-success mt-2">
+                        ▲ {{ efficiency }}%
+                    </div>
 
-        <div class="alert alert-success mt-3">
+                    <div class="mt-2">
+                        Route intelligence improvement detected
+                    </div>
 
-       Optimization achieved an efficiency improvement of {{ efficiency }}% compared to traditional routing.
+                </div>
+            </div>
+
+            <!-- SMART SYSTEM -->
+            <div class="col-md-4">
+                <div class="p-3 rounded shadow-sm border">
+
+                    <div class="text-success fw-bold">IoT Smart System</div>
+                    <h2 class="mt-2">{{ optimized_distance }} km</h2>
+
+                    <div class="text-muted">Dynamic route optimization</div>
+
+                    <div class="mt-3">
+                        <span class="badge bg-success">Efficient</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTTOM INSIGHT STRIP -->
+        <div class="alert alert-dark mt-4 text-center">
+
+            <b>System Insight:</b>
+            Smart routing reduces operational load and improves collection efficiency in real-time IoT simulation.
+
         </div>
 
     </div>
-
 </div>
-
-
 
 
 
@@ -165,6 +275,23 @@ new Chart(document.getElementById('binChart'), {
 });
 
 
+</script>
+
+<script>
+function updateClock() {
+    const now = new Date();
+
+    const timeString = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    document.getElementById("clock").innerText = timeString;
+}
+
+setInterval(updateClock, 1000);
+updateClock();
 </script>
 
 {% endblock %}
