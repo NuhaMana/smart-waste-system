@@ -2,34 +2,106 @@
 
 {% block content %}
 <style>
-canvas {
-    background: rgba(255,255,255,0.02);
-    padding: 10px;
-    border-radius: 10px;
+.section {
+    margin-top: 25px;
+}
+
+.section-title {
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.container {
+    background: #0b1220;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.2);
+}
+h1 {
+    color: #ffffff !important;
+}
+
+.mb-4 {
+    color: #ffffff !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+p {
+    color: var(--text);
+}
+
+:root {
+    --bg: #0b1220;
+    --panel: #121a2a;
+    --panel-2: #151f33;
+
+    --text: #e6e6e6;
+    --muted: #9aa4b2;
+
+    --primary: #4da3ff;
+    --success: #00ff88;
+    --warning: #ffcc00;
+    --danger: #ff4d4d;
+
+    --border: rgba(255,255,255,0.06);
 }
 
 body {
-    background: #1c5305;
-    color: #290aa70e;
+    background: var(--bg);
+    color: var(--text);
 }
 
+/* Cards */
 .card {
-    background: #121a2a;
-    color: #e6e6e6;
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
 }
 
+/* Card header */
 .card-header {
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
 }
 
-.alert {
+/* Muted text fix (IMPORTANT for your issue) */
+.text-muted {
+    color: var(--muted) !important;
+}
+
+/* KPI cards */
+.kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px;
+    box-shadow: 0 0 18px rgba(0,0,0,0.2);
+}
+
+/* Status colors */
+.status-success { color: var(--success); }
+.status-warning { color: var(--warning); }
+.status-danger { color: var(--danger); }
+
+/* Chart area */
+canvas {
+    background: rgba(255,255,255,0.02);
+    padding: 10px;
     border-radius: 12px;
 }
-
-h1, h2, h3, h4, h5 {
-    color: #910505;
+p,
+div,
+span,
+label {
+    color: var(--text);
 }
 </style>
 
@@ -57,33 +129,30 @@ h1, h2, h3, h4, h5 {
 <div class="row mb-4 text-center">
 
     <div class="col-md-4">
-        <div class="card p-3"
-             style="box-shadow: 0 0 15px rgba(0,255,100,0.1);">
-            <h6>Route Efficiency Score</h6>
-            <h2 style="color:#00ff88;">{{ efficiency }}%</h2>
+        <div class="kpi-card">
+            <div class="text-muted">Route Efficiency</div>
+            <h2 class="status-success">{{ efficiency }}%</h2>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="card p-3"
-             style="box-shadow: 0 0 15px rgba(255,0,0,0.1);">
-            <h6>Critical Bins</h6>
-            <h2 style="color:#ff4d4d;">{{ critical_bins }}</h2>
+        <div class="kpi-card">
+            <div class="text-muted">Critical Bins</div>
+            <h2 class="status-danger">{{ critical_bins }}</h2>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="card p-3"
-             style="box-shadow: 0 0 15px rgba(0,150,255,0.1);">
-            <h6>Efficiency Gauge</h6>
+        <div class="kpi-card">
+            <div class="text-muted">System Status</div>
 
             <h2>
                 {% if critical_bins == 0 %}
-                    🟢 STABLE
+                    <span class="status-success">STABLE</span>
                 {% elif critical_bins <= 2 %}
-                    🟡 ACTIVE
+                    <span class="status-warning">ACTIVE</span>
                 {% else %}
-                    🔴 ALERT
+                    <span class="status-danger">ALERT</span>
                 {% endif %}
             </h2>
 
@@ -98,9 +167,10 @@ h1, h2, h3, h4, h5 {
     <div class="col-md-8">
         <div class="card shadow">
 
-            <div class="card-header bg-primary text-white">
-                Bin Fill Analysis
-            </div>
+            <div class="card-header"
+     style="color:white;background:#1d2b45;">
+    Bin Fill Analysis
+</div>
 
             <div class="card-body">
                 <canvas id="binChart"></canvas>
@@ -114,15 +184,59 @@ h1, h2, h3, h4, h5 {
 
         <div class="card shadow h-100">
 
-            <div class="card-header bg-dark text-white">
-                AI System Status
-            </div>
+            <div class="card-header"
+     style="color:white;background:#1d2b45;">
+    AI System Status
+</div>
 
             <div class="card-body">
 <div class="text-info mb-3">
     <b>System Time:</b><br>
     <span id="clock"></span>
 </div>
+
+<div class="row mb-4 text-center">
+
+    <!-- RISK CARD -->
+    <div class="col-md-6">
+        <div class="kpi-card">
+            <div class="text-muted">System Risk Index</div>
+
+            <h2
+                {% if risk_score <= 20 %}
+                    style="color:#00ff88;"
+                {% elif risk_score <= 50 %}
+                    style="color:#ffcc00;"
+                {% else %}
+                    style="color:#ff4d4d;"
+                {% endif %}
+            >
+                {{ risk_score }}%
+            </h2>
+        </div>
+    </div>
+
+    <!-- SYSTEM STATE -->
+    <div class="col-md-6">
+        <div class="kpi-card">
+            <div class="text-muted">AI System State</div>
+
+            <h2>
+                {% if system_state == "OPTIMAL" %}
+                    🟢 OPTIMAL
+                {% elif system_state == "LOW RISK" %}
+                    🟡 LOW RISK
+                {% elif system_state == "MEDIUM RISK" %}
+                    🟠 MEDIUM RISK
+                {% else %}
+                    🔴 HIGH RISK
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+
+</div>
+
 
 <hr>
 
@@ -149,6 +263,7 @@ h1, h2, h3, h4, h5 {
                     <span style="color:#00ff88;">{{ efficiency }}%</span>
                 </p>
 
+                
             </div>
 
         </div>
@@ -157,23 +272,46 @@ h1, h2, h3, h4, h5 {
 
 </div>
 
-<div class="mt-3">
-    <p><b>Network Load Visualization</b></p>
+<div class="section">
+    <p style="color:white; font-size:18px;">
+    <b>Network Load Visualization</b>
+</p>
 
-    <div class="d-flex gap-1">
-        {% for i in range(5) %}
-            <div style="width:20px;height:20px;
-                background:{% if i < critical_bins %}red{% else %}lightgray{% endif %};
-                border-radius:3px;"></div>
+<div class="d-flex gap-1">
+
+        {% for i in range(10) %}
+
+            <div style="
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                transition: 0.3s;
+
+                background:
+                    {% if i < critical_bins %}
+                        #ff4d4d
+                    {% elif i < critical_bins + 2 %}
+                        #ffcc00
+                    {% else %}
+                        #2a2a2a
+                    {% endif %};
+            ">
+            </div>
+
         {% endfor %}
+
     </div>
+
 </div>
+
+
 
 <div class="card shadow mt-4 border-0">
 
-    <div class="card-header bg-gradient bg-success text-white">
-        Smart Collection Performance Intelligence
-    </div>
+    <div class="card-header text-white"
+     style="background: linear-gradient(90deg,#198754,#0dcaf0);">
+    Smart Collection Performance Intelligence
+</div>
 
     <div class="card-body">
 
@@ -219,7 +357,7 @@ h1, h2, h3, h4, h5 {
                     <div class="text-success fw-bold">IoT Smart System</div>
                     <h2 class="mt-2">{{ optimized_distance }} km</h2>
 
-                    <div class="text-muted">Dynamic route optimization</div>
+                    <div class="text-muted">Dynamic route optimization</div> <!-- change this -->
 
                     <div class="mt-3">
                         <span class="badge bg-success">Efficient</span>
@@ -229,6 +367,8 @@ h1, h2, h3, h4, h5 {
             </div>
 
         </div>
+
+        
 
         <!-- BOTTOM INSIGHT STRIP -->
         <div class="alert alert-dark mt-4 text-center">

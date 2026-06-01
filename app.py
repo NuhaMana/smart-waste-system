@@ -116,19 +116,28 @@ def analytics():
     )
 
     if critical_bins == 0:
-        recommendation = (
-            "All bins are currently operating within safe levels."
-        )
+        recommendation = "All bins are currently operating within safe levels."
 
     elif critical_bins <= 2:
-        recommendation = (
-            "Selective smart collection is recommended for critical bins."
-        )
+        recommendation = "Selective smart collection is recommended for critical bins."
 
     else:
-        recommendation = (
-            "Multiple critical bins detected. Immediate optimized collection required."
-        )
+        recommendation = "Multiple critical bins detected. Immediate optimized collection required."
+
+    # =========================
+    # SMART RISK SCORE (FIXED)
+    # =========================
+
+    risk_score = round((critical_bins / total_bins) * 100) if total_bins > 0 else 0
+
+    if risk_score == 0:
+        system_state = "OPTIMAL"
+    elif risk_score <= 20:
+        system_state = "LOW RISK"
+    elif risk_score <= 50:
+        system_state = "MEDIUM RISK"
+    else:
+        system_state = "HIGH RISK"
 
     return render_template(
         "analytics.html",
@@ -138,7 +147,9 @@ def analytics():
         efficiency=efficiency,
         recommendation=recommendation,
         traditional_distance=traditional_distance,
-        optimized_distance=optimized_distance
+        optimized_distance=optimized_distance,
+        risk_score=risk_score,
+        system_state=system_state
     )
 
 @app.route("/routes")
