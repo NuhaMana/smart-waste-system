@@ -304,7 +304,26 @@ label {
 
 </div>
 
+<!-- RISK TREND ANALYSIS -->
 
+<div class="card shadow mt-4">
+
+    <div class="card-header"
+         style="color:white;background:#1d2b45;">
+        Risk Trend Analysis
+    </div>
+
+    <div class="card-body">
+
+        <canvas id="riskTrendChart"></canvas>
+
+        <p class="mt-3 text-muted">
+            AI monitoring analyses historical IoT waste accumulation patterns to identify changing risk levels over time.
+        </p>
+
+    </div>
+
+</div>
 
 <div class="card shadow mt-4 border-0">
 
@@ -412,6 +431,46 @@ new Chart(document.getElementById('binChart'), {
             }
         }
     }
+});
+
+new Chart(document.getElementById('riskTrendChart'), {
+
+    type: 'line',
+
+    data: {
+
+        labels: {{ risk_labels | tojson }},
+
+        datasets: [{
+
+            label: 'Risk Level (%)',
+
+            data: {{ risk_history | tojson }},
+
+            fill: true,
+            tension: 0.4
+
+        }]
+    },
+
+    options: {
+
+        responsive: true,
+
+        scales: {
+
+            y: {
+
+                beginAtZero: true,
+
+                max: 100
+
+            }
+
+        }
+
+    }
+
 });
 
 

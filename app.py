@@ -138,6 +138,24 @@ def analytics():
         system_state = "MEDIUM RISK"
     else:
         system_state = "HIGH RISK"
+    
+        # =========================
+    # REAL HISTORICAL RISK TREND
+    # =========================
+
+    risk_history = []
+    risk_labels = []
+
+    historical_data = data[:20]
+
+    for row in reversed(historical_data):
+
+        timestamp = row[2]
+        fill_level = row[1]
+
+        risk_history.append(fill_level)
+
+        risk_labels.append(timestamp)
 
     return render_template(
         "analytics.html",
@@ -149,7 +167,9 @@ def analytics():
         traditional_distance=traditional_distance,
         optimized_distance=optimized_distance,
         risk_score=risk_score,
-        system_state=system_state
+        system_state=system_state,
+        risk_history=risk_history,
+        risk_labels=risk_labels
     )
 
 @app.route("/routes")
