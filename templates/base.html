@@ -9,6 +9,7 @@
     <title>Smart Waste System</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
 
     body {
@@ -57,7 +58,7 @@
 
 <body class="bg-light">
 
-<nav class="navbar navbar-dark bg-dark px-3">
+<nav class="navbar navbar-dark px-3 smart-navbar">
     <a class="navbar-brand" href="/">Smart Waste System</a>
 
     <div class="d-flex align-items-center">
@@ -80,6 +81,8 @@
     {% endblock %}
 
 </div>
+
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 
 </body>
 </html>

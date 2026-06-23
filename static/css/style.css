@@ -1,0 +1,355 @@
+/* ================================
+   Smart Waste System - Premium AI UI
+   Theme: Option D
+================================ */
+
+
+/* ---------- GLOBAL ---------- */
+
+:root {
+
+    --bg: #020617;
+    --panel: #0f172a;
+    --panel-light: #111827;
+
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+
+    --primary: #38bdf8;
+    --success: #22c55e;
+    --warning: #facc15;
+    --danger: #ef4444;
+
+    --border: rgba(255,255,255,0.12);
+
+}
+
+
+body {
+
+    background: var(--bg);
+    color: var(--text);
+
+    font-family:
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+}
+
+
+/* ---------- NAVBAR ---------- */
+
+.navbar {
+
+    background:
+    rgba(15,23,42,0.85) !important;
+
+    backdrop-filter: blur(12px);
+
+    border-bottom:
+    1px solid var(--border);
+
+}
+
+
+.navbar-brand {
+
+    font-weight:700;
+
+    color:white !important;
+
+    letter-spacing:0.5px;
+
+}
+
+
+
+/* ---------- BUTTONS ---------- */
+
+
+.btn-outline-light {
+
+    border-color:
+    rgba(255,255,255,0.3);
+
+}
+
+
+.btn-outline-light:hover {
+
+    background:var(--primary);
+
+    border-color:var(--primary);
+
+    color:#020617;
+
+}
+
+
+
+/* ---------- CONTAINER ---------- */
+
+
+.container {
+
+    padding-top:25px;
+
+}
+
+
+
+/* ---------- CARDS ---------- */
+
+
+.card {
+
+    background:
+    rgba(12, 27, 63, 0.85);
+
+
+    border:
+
+    1px solid var(--border);
+
+
+    border-radius:18px;
+
+
+    backdrop-filter:blur(10px);
+
+
+    box-shadow:
+
+    0 10px 30px rgba(0,0,0,0.35);
+
+}
+
+
+
+.card-header {
+
+    background:
+    rgba(1, 10, 31, 0.9);
+
+
+    color:white;
+
+
+    font-weight:600;
+
+
+    border-bottom:
+
+    1px solid var(--border);
+
+}
+
+
+
+/* ---------- TEXT ---------- */
+
+
+h1,h2,h3,h4,h5,h6 {
+
+    color:white;
+
+}
+
+
+p {
+
+    color:var(--text);
+
+}
+
+
+.text-muted {
+
+    color:var(--muted) !important;
+
+}
+
+
+
+/* ---------- KPI CARDS ---------- */
+
+
+.kpi-card {
+
+
+    background:
+
+    rgba(255,255,255,0.05);
+
+
+    border:
+
+    1px solid var(--border);
+
+
+    border-radius:16px;
+
+
+    padding:18px;
+
+
+    transition:0.3s;
+
+
+}
+
+
+
+.kpi-card:hover {
+
+
+    transform:translateY(-5px);
+
+
+    border-color:
+
+    var(--primary);
+
+
+}
+
+
+
+/* ---------- STATUS COLORS ---------- */
+
+
+.status-success {
+
+    color:var(--success);
+
+}
+
+
+.status-warning {
+
+    color:var(--warning);
+
+}
+
+
+.status-danger {
+
+    color:var(--danger);
+
+}
+
+
+
+/* ---------- TABLES ---------- */
+
+
+.table {
+
+
+    color:var(--text);
+
+}
+
+
+.table thead {
+
+
+    background:#111827;
+
+
+    color:white;
+
+}
+
+
+.table-hover tbody tr:hover {
+
+
+    background:
+
+    rgba(56,189,248,0.08);
+
+}
+
+
+
+/* ---------- ALERTS ---------- */
+
+
+.alert {
+
+
+    border-radius:16px;
+
+
+}
+
+
+
+/* ---------- CHARTS ---------- */
+
+
+canvas {
+
+
+    background:
+
+    rgba(255,255,255,0.03);
+
+
+    border-radius:16px;
+
+
+    padding:10px;
+
+}
+
+
+
+/* ---------- LIVE BADGE ---------- */
+
+
+.live-badge {
+
+
+    animation:pulse 1.5s infinite;
+
+
+}
+
+
+
+@keyframes pulse {
+
+
+    0% {
+
+        opacity:1;
+
+    }
+
+
+    50% {
+
+        opacity:0.5;
+
+    }
+
+
+    100% {
+
+        opacity:1;
+
+    }
+
+
+}
+
+
+/* Page main headings */
+.container h1,
+.container h2 {
+    color: #0f0505 !important;
+    font-weight: 700;
+}
