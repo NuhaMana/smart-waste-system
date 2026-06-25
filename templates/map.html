@@ -50,6 +50,10 @@
     width:260px;
 
     font-family:Arial;
+
+    backdrop-filter: blur(10px);
+
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
     </style>
@@ -60,17 +64,31 @@
 <div id="map"></div>
 <div id="info-panel">
 
-    <h3>Smart Collection Route</h3>
+    <h3>🚛 Smart Collection Route</h3>
 
-    <p>
-        <strong>Distance:</strong>
-        {{ total_distance }} km
-    </p>
+    <hr>
 
-    <p>
-        <strong>Estimated Time:</strong>
-        {{ estimated_time }} mins
-    </p>
+    <div class="mb-3">
+        <small>Route Distance</small>
+        <h4>{{ total_distance }} km</h4>
+    </div>
+
+    <div class="mb-3">
+        <small>Estimated Time</small>
+        <h4>{{ estimated_time }} mins</h4>
+    </div>
+
+    <div class="mb-3">
+        <small>System Status</small>
+        <h5 style="color:#22c55e;">
+            ACTIVE
+        </h5>
+    </div>
+
+    <div>
+        <small>Optimization Mode</small>
+        <h6>Intelligent Dynamic Routing</h6>
+    </div>
 
 </div>
 
@@ -125,8 +143,9 @@ bins.forEach(function(bin) {
     )
     .addTo(map)
     .bindPopup(
-        bin.id + " - " + bin.fill + "%"
-    );
+    "<b>" + bin.id + "</b><br>" +
+    "Fill Level: " + bin.fill + "%"
+);
 
 });
     
@@ -136,9 +155,9 @@ bins.forEach(function(bin) {
     var polyline = L.polyline(
     route,
     {
-        color: '#0066ff',
-        weight: 6,
-        opacity: 1
+        color: '#38bdf8',
+        weight: 8,
+        opacity: 0.95
     }
     ).addTo(map);
 
