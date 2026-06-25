@@ -78,11 +78,11 @@ body {
 
 .btn-outline-light:hover {
 
-    background:var(--primary);
+    background: rgba(56,189,248,0.15);
 
-    border-color:var(--primary);
+    border-color: var(--primary);
 
-    color:#020617;
+    color: white;
 
 }
 
@@ -352,4 +352,22 @@ canvas {
 .container h2 {
     color: #0f0505 !important;
     font-weight: 700;
+}
+
+
+/* Active Navigation Button */
+
+.nav-link-btn.active {
+
+    background: var(--primary);
+
+    border-color: var(--primary);
+
+    color: #020617 !important;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 0 12px rgba(56,189,248,0.45);
+
 }
