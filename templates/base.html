@@ -84,5 +84,17 @@
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 
+<script>
+
+setInterval(function(){
+
+    if (!window.location.pathname.includes("generate-report")) {
+        location.reload();
+    }
+
+}, 5000);
+
+</script>
+
 </body>
 </html>
