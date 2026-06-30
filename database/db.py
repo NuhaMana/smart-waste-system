@@ -3,7 +3,10 @@ import sqlite3
 DB_PATH = "database/db.sqlite3"
 
 def connect():
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(
+        DB_PATH,
+        timeout=10
+    )
 
 
 def create_table():
