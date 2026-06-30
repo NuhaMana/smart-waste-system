@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_file
 import sqlite3
 import folium
 BIN_LOCATIONS = {
@@ -171,6 +171,19 @@ def analytics():
         risk_history=risk_history,
         risk_labels=risk_labels
     )
+
+@app.route('/generate-report')
+def generate_report():
+
+    from reports.report_generator import create_pdf_report
+
+    pdf_path = create_pdf_report()
+
+    return send_file(
+        pdf_path,
+        as_attachment=True
+    )
+
 
 @app.route("/routes")
 def routes():
