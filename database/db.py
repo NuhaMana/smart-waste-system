@@ -3,11 +3,17 @@ import sqlite3
 DB_PATH = "database/db.sqlite3"
 
 def connect():
-    return sqlite3.connect(
+
+    conn = sqlite3.connect(
         DB_PATH,
-        timeout=10
+        timeout=10       
     )
 
+    conn.execute(
+        "PRAGMA journal_mode=WAL;"   
+    )
+
+    return conn
 
 def create_table():
     conn = connect()
