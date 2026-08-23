@@ -547,4 +547,10 @@ setInterval(updateClock, 1000);
 updateClock();
 </script>
 
+<script>
+    /* Auto-refresh analytics data every 15 seconds.
+       Scoped to this page only — does not affect other pages. */
+    setInterval(function () { location.reload(); }, 15000);
+</script>
+
 {% endblock %}
