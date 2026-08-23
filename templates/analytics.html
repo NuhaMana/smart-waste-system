@@ -255,17 +255,9 @@ label {
 
 <hr>
 
-                <p><b>System Status:</b></p>
+                <p><b>DSS Recommendation:</b></p>
 
-                <p>
-                {% if critical_bins == 0 %}
-                    All systems operating within safe limits.
-                {% elif critical_bins <= 2 %}
-                    Moderate waste accumulation detected.
-                {% else %}
-                    CRITICAL ALERT: Immediate dispatch required.
-                {% endif %}
-                </p>
+                <p>{{ recommendation }}</p>
 
                 <hr>
 
@@ -278,7 +270,12 @@ label {
                     <span style="color:#00ff88;">{{ efficiency }}%</span>
                 </p>
 
-                
+                <hr>
+
+                <p><b>Network Waste Volume:</b><br>
+                    <span style="color:#4da3ff; font-size:18px; font-weight:bold;">{{ total_volume }} L</span><br>
+                    <small class="text-muted">{{ network_capacity_pct }}% of {{ total_capacity }} L total capacity</small>
+                </p>
             </div>
 
         </div>

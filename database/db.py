@@ -177,6 +177,26 @@ def get_fill_rates():
             conn.close()
 
 
+def get_bin_capacities():
+    """
+    Returns {bin_id: capacity_litres} from bin_master.
+    Used to compute actual waste volumes: fill_level / 100 * capacity_litres.
+    """
+    conn = None
+    try:
+        conn = connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT bin_id, capacity_litres FROM bin_master")
+        rows = cursor.fetchall()
+        return {row[0]: row[1] for row in rows}
+    except sqlite3.Error as e:
+        print(f"[DB ERROR] get_bin_capacities: {e}")
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
 def prune_old_readings(keep_last_n=500):
     """Delete telemetry rows beyond the most recent keep_last_n, preventing unbounded growth."""
     conn = None

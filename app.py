@@ -2,7 +2,7 @@ from flask import Flask, render_template, send_file, jsonify
 import sqlite3
 import math
 import json
-from database.db import create_tables, get_bin_locations
+from database.db import create_tables, get_bin_locations, get_bin_capacities
 
 app = Flask(__name__)
 
@@ -11,14 +11,15 @@ DB_PATH = "database/db.sqlite3"
 # Ensure schema and seed data exist before the first request is served
 create_tables()
 
-# Single source of truth — coordinates loaded from bin_master, not hardcoded
-BIN_LOCATIONS = get_bin_locations()
+# Single source of truth — all metadata loaded from bin_master, never hardcoded
+BIN_LOCATIONS  = get_bin_locations()   # {bin_id: (lat, lon)}
+BIN_CAPACITIES = get_bin_capacities()  # {bin_id: capacity_litres}  — Missing 1
 
-# Fixed depot coordinate (collection facility)
+# Fixed depot coordinate (collection facility / route start and end point)
 DEPOT = (6.895, 79.840)
 
-# Fixed bin visit order used for the sequential (traditional) baseline route
-FIXED_BIN_ORDER = ["BIN-001", "BIN-002", "BIN-003", "BIN-004", "BIN-005"]
+# FIX 6: derived from the database — automatically correct if bins are added/removed
+FIXED_BIN_ORDER = sorted(BIN_LOCATIONS.keys())
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +47,7 @@ def get_data():
 
 
 # ---------------------------------------------------------------------------
-# ROUTING & DISTANCE FUNCTIONS (module-scope — shared across all routes)
+# ROUTING & DISTANCE FUNCTIONS (module-scope — shared by all routes)
 # ---------------------------------------------------------------------------
 
 def haversine(a, b):
@@ -69,13 +70,10 @@ def haversine(a, b):
 def nearest_neighbour_route(locations):
     """
     Nearest-Neighbour TSP heuristic.
-    Route starts at DEPOT, visits all locations by always choosing the
-    closest unvisited point, then returns to DEPOT.
+    Route starts at DEPOT, visits all locations by choosing the closest
+    unvisited point at each step, then returns to DEPOT.
 
-    Returns
-    -------
-    route          : list of [lat, lon] pairs (Leaflet-compatible)
-    total_distance : float, total route length in km
+    Returns: (route as list of [lat, lon] pairs, total distance in km)
     """
     if not locations:
         return [], 0.0
@@ -101,57 +99,57 @@ def nearest_neighbour_route(locations):
 
 def sequential_route_distance():
     """
-    FIX 2 — Honest traditional baseline.
-    Computes the distance of a fixed, non-optimised sequential route:
-        DEPOT → BIN-001 → BIN-002 → BIN-003 → BIN-004 → BIN-005 → DEPOT
-
-    This represents a driver following a fixed paper schedule with no DSS.
+    Fixed sequential baseline route: DEPOT → BIN-001 → … → BIN-00N → DEPOT.
+    Represents a driver following a fixed paper schedule with no DSS.
     Used as the 'traditional' benchmark in efficiency calculations.
     """
     points = [BIN_LOCATIONS[b] for b in FIXED_BIN_ORDER if b in BIN_LOCATIONS]
     if not points:
         return 0.0
-
-    total_dist  = haversine(DEPOT, points[0])
+    total_dist = haversine(DEPOT, points[0])
     for i in range(len(points) - 1):
         total_dist += haversine(points[i], points[i + 1])
     total_dist += haversine(points[-1], DEPOT)
-
     return round(total_dist, 2)
 
 
 def calculate_route_distances(latest_bins):
     """
-    Returns two distances for the analytics efficiency comparison:
-
-    traditional_distance : fixed sequential route visiting ALL bins
-                           (DEPOT → BIN-001 → ... → BIN-005 → DEPOT, no intelligence)
-    optimized_distance   : nearest-neighbour route visiting ONLY critical bins
-                           (fill_level >= 80%), starting and ending at DEPOT
+    Returns:
+      traditional_distance — fixed sequential route visiting ALL bins (no DSS)
+      optimized_distance   — nearest-neighbour visiting ONLY critical bins (≥80%)
+    Both distances include depot start and return legs.
     """
     traditional_distance = sequential_route_distance()
-
     critical_coords = [
         BIN_LOCATIONS[row[0]]
         for row in latest_bins.values()
         if row[0] in BIN_LOCATIONS and row[1] >= 80
     ]
     _, optimized_distance = nearest_neighbour_route(critical_coords)
-
     return traditional_distance, optimized_distance
 
 
 # ---------------------------------------------------------------------------
-# SHARED LOGIC HELPER
+# SHARED HELPERS
 # ---------------------------------------------------------------------------
 
 def _build_latest_bins(data):
-    """Return a dict of {bin_id: row} keeping only the most recent row per bin."""
+    """Return {bin_id: row} keeping only the most recent reading per bin."""
     latest = {}
     for row in data:
         if row[0] not in latest:
             latest[row[0]] = row
     return latest
+
+
+def _compute_volume(bin_id, fill_level):
+    """
+    Missing 1: Calculate actual waste volume in litres.
+    volume = fill_level (%) / 100 × capacity_litres
+    """
+    capacity = BIN_CAPACITIES.get(bin_id, 120)
+    return round(fill_level / 100 * capacity, 1)
 
 
 # ---------------------------------------------------------------------------
@@ -180,26 +178,27 @@ def dashboard():
 
         return render_template(
             "dashboard.html",
-            data=data,
+            data=data[:50],              # FIX 5: cap server-side render at 50 rows
             alerts=alerts,
             total_bins=total_bins,
             critical_count=critical_count,
-            average_fill=average_fill
+            average_fill=average_fill,
+            capacities=BIN_CAPACITIES    # Missing 1: passed for volume column
         )
     except Exception as e:
         app.logger.error(f"dashboard error: {e}")
         return render_template(
             "dashboard.html",
-            data=[], alerts=[], total_bins=0, critical_count=0, average_fill=0
+            data=[], alerts=[], total_bins=0,
+            critical_count=0, average_fill=0, capacities={}
         )
 
 
 @app.route("/api/dashboard")
 def api_dashboard():
     """
-    FIX 4 — JSON endpoint polled by the dashboard's JavaScript every 10 seconds.
-    Returns current KPI figures, active alerts, and the latest 50 readings.
-    No page reload required — the JS updates the DOM in place.
+    JSON endpoint polled by the dashboard JavaScript every 10 seconds.
+    Returns KPI figures, alerts, and the latest 50 readings with volumes.
     """
     try:
         data        = get_data()
@@ -224,10 +223,11 @@ def api_dashboard():
             fl     = row[1]
             status = "HIGH" if fl >= 80 else ("MEDIUM" if fl >= 50 else "LOW")
             readings.append({
-                "bin_id":     row[0],
-                "fill_level": fl,
-                "status":     status,
-                "timestamp":  row[2]
+                "bin_id":        row[0],
+                "fill_level":    fl,
+                "volume_litres": _compute_volume(row[0], fl),   # Missing 1
+                "status":        status,
+                "timestamp":     row[2]
             })
 
         return jsonify({
@@ -253,10 +253,10 @@ def analytics():
         total_bins    = len(chart_values)
         critical_bins = sum(1 for v in chart_values if v >= 80)
 
-        # Fix 2: real distances — sequential baseline vs nearest-neighbour optimised
         traditional_distance, optimized_distance = calculate_route_distances(latest_bins)
 
-        if traditional_distance > 0:
+        # FIX 2: when no bins need collection, efficiency is 0 — not 100%
+        if traditional_distance > 0 and critical_bins > 0:
             efficiency = round(
                 ((traditional_distance - optimized_distance) / traditional_distance) * 100
             )
@@ -287,19 +287,27 @@ def analytics():
             risk_history.append(row[1])
             risk_labels.append(row[2])
 
+        # Missing 1: actual waste volume across the network
+        total_volume   = sum(_compute_volume(row[0], row[1]) for row in latest_bins.values())
+        total_capacity = sum(BIN_CAPACITIES.get(row[0], 120) for row in latest_bins.values())
+        network_capacity_pct = round((total_volume / total_capacity * 100), 1) if total_capacity > 0 else 0
+
         return render_template(
             "analytics.html",
             labels=chart_labels,
             values=chart_values,
             critical_bins=critical_bins,
             efficiency=efficiency,
-            recommendation=recommendation,
+            recommendation=recommendation,        # FIX 1: now passed correctly to template
             traditional_distance=traditional_distance,
             optimized_distance=optimized_distance,
             risk_score=risk_score,
             system_state=system_state,
             risk_history=risk_history,
-            risk_labels=risk_labels
+            risk_labels=risk_labels,
+            total_volume=total_volume,            # Missing 1
+            total_capacity=total_capacity,        # Missing 1
+            network_capacity_pct=network_capacity_pct  # Missing 1
         )
     except Exception as e:
         app.logger.error(f"analytics error: {e}")
@@ -378,12 +386,8 @@ def map_view():
 
 @app.route("/collections")
 def collections():
-    """
-    FIX 5 — Displays the collection event history from collection_events.
-    Entirely separate from telemetry readings — only actual bin-emptying events appear here.
-    """
+    conn = None
     try:
-        conn = None
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("""

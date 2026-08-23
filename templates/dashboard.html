@@ -76,6 +76,7 @@
                 <tr>
                     <th>Bin ID</th>
                     <th>Fill Level (%)</th>
+                    <th>Volume (L)</th>
                     <th>Status</th>
                     <th>Timestamp</th>
                 </tr>
@@ -86,6 +87,7 @@
                 <tr>
                     <td>{{ row[0] }}</td>
                     <td>{{ row[1] }}</td>
+                    <td>{{ (row[1] / 100 * capacities.get(row[0], 120)) | round(1) }} L</td>
                     <td>
                         {% if row[1] >= 80 %}
                             <span class="badge bg-danger">HIGH</span>
@@ -148,6 +150,7 @@ function refreshDashboard() {
                     return '<tr>' +
                         '<td>' + row.bin_id     + '</td>' +
                         '<td>' + row.fill_level + '</td>' +
+                        '<td>' + row.volume_litres + ' L</td>' +
                         '<td><span class="badge ' + badgeClass + '">' + row.status + '</span></td>' +
                         '<td>' + row.timestamp  + '</td>' +
                     '</tr>';
