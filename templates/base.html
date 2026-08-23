@@ -70,7 +70,8 @@
         <a class="btn btn-outline-light btn-sm me-2 nav-link-btn" href="/">Dashboard</a>
         <a class="btn btn-outline-light btn-sm me-2 nav-link-btn" href="/analytics">Analytics</a>
         <a class="btn btn-outline-light btn-sm me-2 nav-link-btn" href="/routes">Routes</a>
-        <a class="btn btn-outline-light btn-sm nav-link-btn" href="/map">Map</a>
+        <a class="btn btn-outline-light btn-sm me-2 nav-link-btn" href="/map">Map</a>
+        <a class="btn btn-outline-light btn-sm nav-link-btn" href="/collections">Collections</a>
 
     </div>
 </nav>
@@ -84,17 +85,8 @@
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 
-<script>
 
-setInterval(function(){
 
-    if (!window.location.pathname.includes("generate-report")) {
-        location.reload();
-    }
-
-}, 5000);
-
-</script>
 
 </body>
 </html>

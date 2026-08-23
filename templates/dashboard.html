@@ -6,19 +6,25 @@
 
     <h2 class="fw-bold">Smart Waste Monitoring Dashboard</h2>
 
-    <span class="badge bg-success fs-6">
-        ● SYSTEM LIVE
-    </span>
+    <div class="d-flex align-items-center gap-3">
+        <span class="text-muted small">
+            Last updated: <span id="last-updated">—</span>
+        </span>
+        <span class="badge bg-success fs-6">
+            ● SYSTEM LIVE
+        </span>
+    </div>
 
 </div>
 
+<!-- KPI CARDS -->
 <div class="row mb-4">
 
     <div class="col-md-4">
         <div class="card smart-card shadow-sm border-0">
             <div class="card-body text-center">
                 <h5>🗑️ Total Bins</h5>
-                <h2 class="text-primary">{{ total_bins }}</h2>
+                <h2 class="text-primary" id="kpi-total-bins">{{ total_bins }}</h2>
             </div>
         </div>
     </div>
@@ -27,7 +33,7 @@
         <div class="card smart-card shadow-sm border-0">
             <div class="card-body text-center">
                 <h5>⚠️ Critical Bins</h5>
-                <h2 class="text-danger">{{ critical_count }}</h2>
+                <h2 class="text-danger" id="kpi-critical-count">{{ critical_count }}</h2>
             </div>
         </div>
     </div>
@@ -36,31 +42,26 @@
         <div class="card smart-card shadow-sm border-0">
             <div class="card-body text-center">
                 <h5>📊 Avg Fill Level</h5>
-                <h2 class="text-success">{{ average_fill }}%</h2>
+                <h2 class="text-success" id="kpi-average-fill">{{ average_fill }}%</h2>
             </div>
         </div>
     </div>
 
 </div>
 
-{% if alerts %}
-
-<div class="alert alert-danger shadow-sm">
-
-    <h5 class="mb-3">🚨 Critical Alerts</h5>
-
-    {% for alert in alerts %}
-        <div>⚠ {{ alert }}</div>
-    {% endfor %}
-
+<!-- ALERTS CONTAINER (updated by JS) -->
+<div id="alerts-container" {% if not alerts %}style="display:none;"{% endif %}>
+    <div class="alert alert-danger shadow-sm">
+        <h5 class="mb-3">🚨 Critical Alerts</h5>
+        <div id="alerts-list">
+            {% for alert in alerts %}
+                <div>{{ alert }}</div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
-{% endif %}
-
-
-
-
-<!-- Monitoring Table -->
+<!-- MONITORING TABLE -->
 <div class="card shadow">
 
     <div class="card-header bg-dark text-white">
@@ -72,47 +73,31 @@
         <table class="table table-striped table-bordered table-hover align-middle">
 
             <thead class="table-dark">
-
                 <tr>
                     <th>Bin ID</th>
                     <th>Fill Level (%)</th>
                     <th>Status</th>
                     <th>Timestamp</th>
                 </tr>
-
             </thead>
 
-            <tbody>
-
+            <tbody id="readings-tbody">
                 {% for row in data %}
-
                 <tr>
-
                     <td>{{ row[0] }}</td>
-
                     <td>{{ row[1] }}</td>
-
                     <td>
-
                         {% if row[1] >= 80 %}
                             <span class="badge bg-danger">HIGH</span>
-
                         {% elif row[1] >= 50 %}
                             <span class="badge bg-warning text-dark">MEDIUM</span>
-
                         {% else %}
                             <span class="badge bg-success">LOW</span>
-
                         {% endif %}
-
                     </td>
-
                     <td>{{ row[2] }}</td>
-
                 </tr>
-
                 {% endfor %}
-
             </tbody>
 
         </table>
@@ -120,5 +105,69 @@
     </div>
 
 </div>
+
+<!-- AJAX POLLING SCRIPT -->
+<script>
+/**
+ * Fix 4 — Live dashboard refresh via the /api/dashboard JSON endpoint.
+ * Polls every 10 seconds and updates the DOM in place — no page reload.
+ */
+function refreshDashboard() {
+    fetch('/api/dashboard')
+        .then(function(response) {
+            if (!response.ok) throw new Error('Network response not ok');
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.error) return;
+
+            // Update KPI cards
+            document.getElementById('kpi-total-bins').textContent    = data.total_bins;
+            document.getElementById('kpi-critical-count').textContent = data.critical_count;
+            document.getElementById('kpi-average-fill').textContent   = data.average_fill + '%';
+
+            // Update alerts block
+            var alertsContainer = document.getElementById('alerts-container');
+            var alertsList      = document.getElementById('alerts-list');
+            if (data.alerts && data.alerts.length > 0) {
+                alertsList.innerHTML = data.alerts
+                    .map(function(a) { return '<div>⚠ ' + a + '</div>'; })
+                    .join('');
+                alertsContainer.style.display = 'block';
+            } else {
+                alertsContainer.style.display = 'none';
+            }
+
+            // Update readings table
+            var tbody = document.getElementById('readings-tbody');
+            if (data.readings && data.readings.length > 0) {
+                tbody.innerHTML = data.readings.map(function(row) {
+                    var badgeClass = row.status === 'HIGH'
+                        ? 'bg-danger'
+                        : (row.status === 'MEDIUM' ? 'bg-warning text-dark' : 'bg-success');
+                    return '<tr>' +
+                        '<td>' + row.bin_id     + '</td>' +
+                        '<td>' + row.fill_level + '</td>' +
+                        '<td><span class="badge ' + badgeClass + '">' + row.status + '</span></td>' +
+                        '<td>' + row.timestamp  + '</td>' +
+                    '</tr>';
+                }).join('');
+            }
+
+            // Update last-refreshed timestamp
+            document.getElementById('last-updated').textContent =
+                new Date().toLocaleTimeString('en-GB', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+        })
+        .catch(function(err) {
+            console.warn('Dashboard refresh error:', err);
+        });
+}
+
+// Run immediately on load, then every 10 seconds
+refreshDashboard();
+setInterval(refreshDashboard, 10000);
+</script>
 
 {% endblock %}

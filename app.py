@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_file
+from flask import Flask, render_template, send_file, jsonify
 import sqlite3
 import math
 import json
@@ -14,8 +14,11 @@ create_tables()
 # Single source of truth — coordinates loaded from bin_master, not hardcoded
 BIN_LOCATIONS = get_bin_locations()
 
-# Fixed depot coordinate (collection facility / starting point for all routes)
+# Fixed depot coordinate (collection facility)
 DEPOT = (6.895, 79.840)
+
+# Fixed bin visit order used for the sequential (traditional) baseline route
+FIXED_BIN_ORDER = ["BIN-001", "BIN-002", "BIN-003", "BIN-004", "BIN-005"]
 
 
 # ---------------------------------------------------------------------------
@@ -23,27 +26,33 @@ DEPOT = (6.895, 79.840)
 # ---------------------------------------------------------------------------
 
 def get_data():
-    """Return all telemetry readings ordered by most recent timestamp first."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT bin_id, fill_level, timestamp
-        FROM telemetry
-        ORDER BY timestamp DESC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
+    """Return all telemetry readings, most recent first. Returns [] on error."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT bin_id, fill_level, timestamp
+            FROM telemetry
+            ORDER BY timestamp DESC
+        """)
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        app.logger.error(f"get_data DB error: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
 
 
 # ---------------------------------------------------------------------------
-# ROUTING ALGORITHMS (module-scope — shared by analytics and map views)
+# ROUTING & DISTANCE FUNCTIONS (module-scope — shared across all routes)
 # ---------------------------------------------------------------------------
 
 def haversine(a, b):
     """
-    Haversine formula: returns the great-circle distance in km
-    between two points given as (latitude, longitude) tuples.
+    Haversine formula: great-circle distance in km between
+    two (latitude, longitude) coordinate pairs.
     """
     R = 6371
     lat1, lon1 = a
@@ -60,17 +69,13 @@ def haversine(a, b):
 def nearest_neighbour_route(locations):
     """
     Nearest-Neighbour TSP heuristic.
-    Builds a route that starts at DEPOT, visits every location in `locations`
-    by always travelling to the closest unvisited point, then returns to DEPOT.
-
-    Parameters
-    ----------
-    locations : list of (lat, lon) tuples
+    Route starts at DEPOT, visits all locations by always choosing the
+    closest unvisited point, then returns to DEPOT.
 
     Returns
     -------
     route          : list of [lat, lon] pairs (Leaflet-compatible)
-    total_distance : float, total route length in km (rounded to 2 d.p.)
+    total_distance : float, total route length in km
     """
     if not locations:
         return [], 0.0
@@ -94,35 +99,59 @@ def nearest_neighbour_route(locations):
     return route, round(total_dist, 2)
 
 
+def sequential_route_distance():
+    """
+    FIX 2 — Honest traditional baseline.
+    Computes the distance of a fixed, non-optimised sequential route:
+        DEPOT → BIN-001 → BIN-002 → BIN-003 → BIN-004 → BIN-005 → DEPOT
+
+    This represents a driver following a fixed paper schedule with no DSS.
+    Used as the 'traditional' benchmark in efficiency calculations.
+    """
+    points = [BIN_LOCATIONS[b] for b in FIXED_BIN_ORDER if b in BIN_LOCATIONS]
+    if not points:
+        return 0.0
+
+    total_dist  = haversine(DEPOT, points[0])
+    for i in range(len(points) - 1):
+        total_dist += haversine(points[i], points[i + 1])
+    total_dist += haversine(points[-1], DEPOT)
+
+    return round(total_dist, 2)
+
+
 def calculate_route_distances(latest_bins):
     """
-    Computes real Haversine-based distances for both the traditional and
-    the optimised (DSS) collection routes.
+    Returns two distances for the analytics efficiency comparison:
 
-    traditional_distance : nearest-neighbour route visiting ALL bins,
-                           depot → all bins → depot
-    optimized_distance   : nearest-neighbour route visiting ONLY critical
-                           bins (fill_level >= 80%), depot → critical → depot
-
-    Returns
-    -------
-    (traditional_distance, optimized_distance) in km, both rounded to 2 d.p.
+    traditional_distance : fixed sequential route visiting ALL bins
+                           (DEPOT → BIN-001 → ... → BIN-005 → DEPOT, no intelligence)
+    optimized_distance   : nearest-neighbour route visiting ONLY critical bins
+                           (fill_level >= 80%), starting and ending at DEPOT
     """
-    all_coords = [
-        BIN_LOCATIONS[row[0]]
-        for row in latest_bins.values()
-        if row[0] in BIN_LOCATIONS
-    ]
+    traditional_distance = sequential_route_distance()
+
     critical_coords = [
         BIN_LOCATIONS[row[0]]
         for row in latest_bins.values()
         if row[0] in BIN_LOCATIONS and row[1] >= 80
     ]
-
-    _, traditional_distance = nearest_neighbour_route(all_coords)
-    _, optimized_distance   = nearest_neighbour_route(critical_coords)
+    _, optimized_distance = nearest_neighbour_route(critical_coords)
 
     return traditional_distance, optimized_distance
+
+
+# ---------------------------------------------------------------------------
+# SHARED LOGIC HELPER
+# ---------------------------------------------------------------------------
+
+def _build_latest_bins(data):
+    """Return a dict of {bin_id: row} keeping only the most recent row per bin."""
+    latest = {}
+    for row in data:
+        if row[0] not in latest:
+            latest[row[0]] = row
+    return latest
 
 
 # ---------------------------------------------------------------------------
@@ -131,180 +160,250 @@ def calculate_route_distances(latest_bins):
 
 @app.route("/")
 def dashboard():
-    data = get_data()
+    try:
+        data        = get_data()
+        latest_bins = _build_latest_bins(data)
 
-    # Keep only the most recent reading per bin
-    latest_bins = {}
-    for row in data:
-        if row[0] not in latest_bins:
-            latest_bins[row[0]] = row
+        alerts         = []
+        total_fill     = 0
+        critical_count = 0
 
-    alerts         = []
-    total_fill     = 0
-    critical_count = 0
+        for row in latest_bins.values():
+            fill_level  = row[1]
+            total_fill += fill_level
+            if fill_level >= 80:
+                critical_count += 1
+                alerts.append(f"⚠ {row[0]} is critically full ({fill_level}%)")
 
-    for row in latest_bins.values():
-        fill_level  = row[1]
-        total_fill += fill_level
+        total_bins   = len(latest_bins)
+        average_fill = round(total_fill / total_bins, 1) if total_bins > 0 else 0
 
-        if fill_level >= 80:
-            critical_count += 1
-            alerts.append(f"⚠ {row[0]} is critically full ({fill_level}%)")
+        return render_template(
+            "dashboard.html",
+            data=data,
+            alerts=alerts,
+            total_bins=total_bins,
+            critical_count=critical_count,
+            average_fill=average_fill
+        )
+    except Exception as e:
+        app.logger.error(f"dashboard error: {e}")
+        return render_template(
+            "dashboard.html",
+            data=[], alerts=[], total_bins=0, critical_count=0, average_fill=0
+        )
 
-    total_bins   = len(latest_bins)
-    average_fill = round(total_fill / total_bins, 1) if total_bins > 0 else 0
 
-    return render_template(
-        "dashboard.html",
-        data=data,
-        alerts=alerts,
-        total_bins=total_bins,
-        critical_count=critical_count,
-        average_fill=average_fill
-    )
+@app.route("/api/dashboard")
+def api_dashboard():
+    """
+    FIX 4 — JSON endpoint polled by the dashboard's JavaScript every 10 seconds.
+    Returns current KPI figures, active alerts, and the latest 50 readings.
+    No page reload required — the JS updates the DOM in place.
+    """
+    try:
+        data        = get_data()
+        latest_bins = _build_latest_bins(data)
+
+        alerts         = []
+        total_fill     = 0
+        critical_count = 0
+
+        for row in latest_bins.values():
+            fill_level  = row[1]
+            total_fill += fill_level
+            if fill_level >= 80:
+                critical_count += 1
+                alerts.append(f"{row[0]} is critically full ({fill_level}%)")
+
+        total_bins   = len(latest_bins)
+        average_fill = round(total_fill / total_bins, 1) if total_bins > 0 else 0
+
+        readings = []
+        for row in data[:50]:
+            fl     = row[1]
+            status = "HIGH" if fl >= 80 else ("MEDIUM" if fl >= 50 else "LOW")
+            readings.append({
+                "bin_id":     row[0],
+                "fill_level": fl,
+                "status":     status,
+                "timestamp":  row[2]
+            })
+
+        return jsonify({
+            "total_bins":     total_bins,
+            "critical_count": critical_count,
+            "average_fill":   average_fill,
+            "alerts":         alerts,
+            "readings":       readings
+        })
+    except Exception as e:
+        app.logger.error(f"api_dashboard error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/analytics")
 def analytics():
-    data = get_data()
+    try:
+        data        = get_data()
+        latest_bins = _build_latest_bins(data)
 
-    # Keep only the most recent reading per bin
-    latest_bins = {}
-    for row in data:
-        if row[0] not in latest_bins:
-            latest_bins[row[0]] = row
+        chart_labels  = [row[0] for row in latest_bins.values()]
+        chart_values  = [row[1] for row in latest_bins.values()]
+        total_bins    = len(chart_values)
+        critical_bins = sum(1 for v in chart_values if v >= 80)
 
-    chart_labels = [row[0] for row in latest_bins.values()]
-    chart_values = [row[1] for row in latest_bins.values()]
+        # Fix 2: real distances — sequential baseline vs nearest-neighbour optimised
+        traditional_distance, optimized_distance = calculate_route_distances(latest_bins)
 
-    total_bins    = len(chart_values)
-    critical_bins = sum(1 for v in chart_values if v >= 80)
+        if traditional_distance > 0:
+            efficiency = round(
+                ((traditional_distance - optimized_distance) / traditional_distance) * 100
+            )
+        else:
+            efficiency = 0
 
-    # -----------------------------------------------------------------------
-    # Real Haversine-based efficiency calculation (not a fabricated formula)
-    # -----------------------------------------------------------------------
-    traditional_distance, optimized_distance = calculate_route_distances(latest_bins)
+        if critical_bins == 0:
+            recommendation = "All bins are currently operating within safe levels."
+        elif critical_bins <= 2:
+            recommendation = "Selective smart collection is recommended for critical bins."
+        else:
+            recommendation = "Multiple critical bins detected. Immediate optimised collection required."
 
-    if traditional_distance > 0:
-        efficiency = round(
-            ((traditional_distance - optimized_distance) / traditional_distance) * 100
+        risk_score = round((critical_bins / total_bins) * 100) if total_bins > 0 else 0
+
+        if risk_score == 0:
+            system_state = "OPTIMAL"
+        elif risk_score <= 20:
+            system_state = "LOW RISK"
+        elif risk_score <= 50:
+            system_state = "MEDIUM RISK"
+        else:
+            system_state = "HIGH RISK"
+
+        risk_history = []
+        risk_labels  = []
+        for row in reversed(data[:20]):
+            risk_history.append(row[1])
+            risk_labels.append(row[2])
+
+        return render_template(
+            "analytics.html",
+            labels=chart_labels,
+            values=chart_values,
+            critical_bins=critical_bins,
+            efficiency=efficiency,
+            recommendation=recommendation,
+            traditional_distance=traditional_distance,
+            optimized_distance=optimized_distance,
+            risk_score=risk_score,
+            system_state=system_state,
+            risk_history=risk_history,
+            risk_labels=risk_labels
         )
-    else:
-        efficiency = 0
-
-    # DSS recommendation text
-    if critical_bins == 0:
-        recommendation = "All bins are currently operating within safe levels."
-    elif critical_bins <= 2:
-        recommendation = "Selective smart collection is recommended for critical bins."
-    else:
-        recommendation = "Multiple critical bins detected. Immediate optimised collection required."
-
-    # Risk index
-    risk_score = round((critical_bins / total_bins) * 100) if total_bins > 0 else 0
-
-    if risk_score == 0:
-        system_state = "OPTIMAL"
-    elif risk_score <= 20:
-        system_state = "LOW RISK"
-    elif risk_score <= 50:
-        system_state = "MEDIUM RISK"
-    else:
-        system_state = "HIGH RISK"
-
-    # Historical risk trend (last 20 telemetry readings, oldest first)
-    risk_history = []
-    risk_labels  = []
-    for row in reversed(data[:20]):
-        risk_history.append(row[1])
-        risk_labels.append(row[2])
-
-    return render_template(
-        "analytics.html",
-        labels=chart_labels,
-        values=chart_values,
-        critical_bins=critical_bins,
-        efficiency=efficiency,
-        recommendation=recommendation,
-        traditional_distance=traditional_distance,
-        optimized_distance=optimized_distance,
-        risk_score=risk_score,
-        system_state=system_state,
-        risk_history=risk_history,
-        risk_labels=risk_labels
-    )
+    except Exception as e:
+        app.logger.error(f"analytics error: {e}")
+        return f"<h3>Analytics temporarily unavailable: {e}</h3>", 500
 
 
 @app.route("/generate-report")
 def generate_report():
-    from reports.report_generator import create_pdf_report
-    pdf_path = create_pdf_report()
-    return send_file(pdf_path, as_attachment=True)
+    try:
+        from reports.report_generator import create_pdf_report
+        pdf_path = create_pdf_report()
+        return send_file(pdf_path, as_attachment=True)
+    except Exception as e:
+        app.logger.error(f"generate_report error: {e}")
+        return f"<h3>Report generation failed: {e}</h3>", 500
 
 
 @app.route("/routes")
 def routes():
-    data = get_data()
+    try:
+        data        = get_data()
+        latest_bins = _build_latest_bins(data)
 
-    # Keep only the most recent reading per bin
-    latest_bins = {}
-    for row in data:
-        if row[0] not in latest_bins:
-            latest_bins[row[0]] = row
+        priority_bins = [
+            {"bin_id": row[0], "fill_level": row[1], "timestamp": row[2]}
+            for row in latest_bins.values()
+            if row[1] >= 80
+        ]
+        priority_bins.sort(key=lambda x: x["fill_level"], reverse=True)
 
-    # Filter to critical bins only; sort highest fill level first
-    priority_bins = [
-        {"bin_id": row[0], "fill_level": row[1], "timestamp": row[2]}
-        for row in latest_bins.values()
-        if row[1] >= 80
-    ]
-    priority_bins.sort(key=lambda x: x["fill_level"], reverse=True)
-
-    return render_template("routes.html", priority_bins=priority_bins)
+        return render_template("routes.html", priority_bins=priority_bins)
+    except Exception as e:
+        app.logger.error(f"routes error: {e}")
+        return f"<h3>Routes temporarily unavailable: {e}</h3>", 500
 
 
 @app.route("/map")
 def map_view():
-    data = get_data()
+    try:
+        data        = get_data()
+        latest_bins = _build_latest_bins(data)
 
-    # Keep only the most recent reading per bin
-    latest_bins = {}
-    for row in data:
-        if row[0] not in latest_bins:
-            latest_bins[row[0]] = row
+        bins_data     = []
+        critical_bins = []
 
-    bins_data     = []
-    critical_bins = []
+        for row in latest_bins.values():
+            bin_id     = row[0]
+            fill_level = row[1]
+            if bin_id not in BIN_LOCATIONS:
+                continue
+            lat, lon = BIN_LOCATIONS[bin_id]
+            bins_data.append({"id": bin_id, "fill": fill_level, "lat": lat, "lon": lon})
+            if fill_level >= 80:
+                critical_bins.append((lat, lon))
 
-    for row in latest_bins.values():
-        bin_id     = row[0]
-        fill_level = row[1]
+        route          = []
+        total_distance = 0
+        estimated_time = 0
 
-        if bin_id not in BIN_LOCATIONS:
-            continue
+        if len(critical_bins) >= 1:
+            route, total_distance = nearest_neighbour_route(critical_bins)
+            estimated_time        = round((total_distance / 25) * 60, 1)
 
-        lat, lon = BIN_LOCATIONS[bin_id]
-        bins_data.append({"id": bin_id, "fill": fill_level, "lat": lat, "lon": lon})
+        return render_template(
+            "map.html",
+            bins=json.dumps(bins_data),
+            route=json.dumps(route),
+            depot=json.dumps(list(DEPOT)),
+            total_distance=total_distance,
+            estimated_time=estimated_time
+        )
+    except Exception as e:
+        app.logger.error(f"map_view error: {e}")
+        return f"<h3>Map temporarily unavailable: {e}</h3>", 500
 
-        if fill_level >= 80:
-            critical_bins.append((lat, lon))
 
-    route          = []
-    total_distance = 0
-    estimated_time = 0
-
-    if len(critical_bins) >= 1:
-        route, total_distance = nearest_neighbour_route(critical_bins)
-        estimated_time        = round((total_distance / 25) * 60, 1)
-
-    return render_template(
-        "map.html",
-        bins=json.dumps(bins_data),
-        route=json.dumps(route),
-        depot=json.dumps(list(DEPOT)),
-        total_distance=total_distance,
-        estimated_time=estimated_time
-    )
+@app.route("/collections")
+def collections():
+    """
+    FIX 5 — Displays the collection event history from collection_events.
+    Entirely separate from telemetry readings — only actual bin-emptying events appear here.
+    """
+    try:
+        conn = None
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ce.bin_id,
+                   bm.location_name,
+                   ce.fill_at_collection,
+                   ce.collected_at
+            FROM   collection_events ce
+            JOIN   bin_master        bm ON ce.bin_id = bm.bin_id
+            ORDER  BY ce.collected_at DESC
+            LIMIT  100
+        """)
+        events = cursor.fetchall()
+        conn.close()
+        return render_template("collections.html", events=events)
+    except Exception as e:
+        app.logger.error(f"collections error: {e}")
+        if conn:
+            conn.close()
+        return f"<h3>Collections log temporarily unavailable: {e}</h3>", 500
 
 
 if __name__ == "__main__":
