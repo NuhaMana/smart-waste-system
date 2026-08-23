@@ -87,7 +87,7 @@
 
     <div>
         <small>Optimization Mode</small>
-        <h6>Intelligent Dynamic Routing</h6>
+        <h6>Rule-Based DSS Routing</h6>
     </div>
 
 </div>
@@ -149,6 +149,18 @@ bins.forEach(function(bin) {
 
 });
     
+    // DEPOT MARKER
+    var depot = {{ depot|safe }};
+    var depotIcon = L.divIcon({
+        html: '<div style="font-size:30px; line-height:1;">🏭</div>',
+        className: '',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+    L.marker(depot, { icon: depotIcon })
+     .addTo(map)
+     .bindPopup("<b>Collection Depot</b><br>Route start &amp; end point");
+
     // ROUTE LINE
     if (route.length >= 2) {
 

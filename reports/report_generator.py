@@ -37,7 +37,7 @@ def generate_report_data():
     df = pd.read_sql_query(
         """
         SELECT bin_id, fill_level, timestamp
-        FROM bins
+        FROM telemetry
         ORDER BY timestamp
         """,
         conn
