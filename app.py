@@ -285,7 +285,7 @@ def analytics():
         risk_labels  = []
         for row in reversed(data[:20]):
             risk_history.append(row[1])
-            risk_labels.append(row[2])
+            risk_labels.append(row[2][11:19])  # "HH:MM:SS" only — prevents x-axis overlap
 
         # Missing 1: actual waste volume across the network
         total_volume   = sum(_compute_volume(row[0], row[1]) for row in latest_bins.values())

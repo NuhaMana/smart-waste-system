@@ -103,12 +103,29 @@ def generate_report_data():
     # -------------------------------------------------------------------------
     trend_path = "reports/historical_trend.png"
     try:
+        bin_colours = {
+            "BIN-001": "#1a73e8",
+            "BIN-002": "#28a745",
+            "BIN-003": "#ffc107",
+            "BIN-004": "#dc3545",
+            "BIN-005": "#9b59b6",
+        }
         plt.figure(figsize=(9, 4))
-        plt.plot(df["timestamp"], df["fill_level"], linewidth=2, color="#1a73e8")
-        plt.title("Historical Waste Fill Level Trend")
+        for bin_id, group in df.groupby("bin_id"):
+            plt.plot(
+                group["timestamp"],
+                group["fill_level"],
+                label=bin_id,
+                linewidth=2,
+                color=bin_colours.get(bin_id, "#333333")
+            )
+        plt.axhline(y=80, color="red", linestyle="--", linewidth=1, label="Critical threshold (80%)")
+        plt.title("Historical Waste Fill Level Trend — Per Bin")
         plt.xlabel("Time")
         plt.ylabel("Fill Level (%)")
+        plt.ylim(0, 105)
         plt.xticks(rotation=45)
+        plt.legend(loc="upper left", fontsize=8)
         plt.grid(alpha=0.3)
         plt.tight_layout()
         plt.savefig(trend_path, dpi=150)

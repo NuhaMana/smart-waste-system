@@ -77,9 +77,9 @@ if __name__ == "__main__":
                 print(f"  {bin_id} ({rate}%/cycle)  [{bar}]  {level}%")
             print()
 
-            # Prune telemetry log every 10 cycles (keep last 500 rows)
+            # Prune telemetry log every 10 cycles (keep last 5000 rows ≈ 14 hours)
             if cycle % 10 == 0:
-                prune_old_readings(keep_last_n=500)
+                prune_old_readings(keep_last_n=5000)
                 print("  [DB] Telemetry pruned — oldest readings removed.\n")
 
             time.sleep(5)
