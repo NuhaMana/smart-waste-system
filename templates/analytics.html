@@ -2,59 +2,42 @@
 
 {% block content %}
 <style>
-.section {
-    margin-top: 25px;
+:root {
+    --bg: #0b1220;
+    --panel: #121a2a;
+    --panel-2: #151f33;
+    --text: #e2e8f0;
+    --text-heading: #ffffff;
+    --muted: #94a3b8;
+    --primary: #38bdf8;
+    --success: #00ff88;
+    --warning: #ffcc00;
+    --danger: #ff4d4d;
+    --border: rgba(255, 255, 255, 0.08);
 }
 
-.section-title {
-    font-size: 14px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
+body {
+    background: var(--bg);
+    color: var(--text);
 }
 
 .container {
     background: #0b1220;
     padding: 25px;
     border-radius: 15px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.2);
-}
-h1 {
-    color: #ffffff !important;
-}
-
-.mb-4 {
-    color: #ffffff !important;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
+    color: var(--text-heading) !important;
 }
 
-p {
+p, span, div, label {
     color: var(--text);
 }
 
-:root {
-    --bg: #0b1220;
-    --panel: #121a2a;
-    --panel-2: #151f33;
-
-    --text: #e6e6e6;
-    --muted: #9aa4b2;
-
-    --primary: #4da3ff;
-    --success: #00ff88;
-    --warning: #ffcc00;
-    --danger: #ff4d4d;
-
-    --border: rgba(255,255,255,0.06);
-}
-
-body {
-    background: var(--bg);
-    color: var(--text);
+.text-muted {
+    color: var(--muted) !important;
 }
 
 /* Cards */
@@ -65,16 +48,11 @@ body {
     border-radius: 14px;
 }
 
-/* Card header */
 .card-header {
-    background: var(--panel-2);
+    background: #1d2b45;
+    color: #ffffff !important;
     border-bottom: 1px solid var(--border);
     font-weight: 600;
-}
-
-/* Muted text fix (IMPORTANT for your issue) */
-.text-muted {
-    color: var(--muted) !important;
 }
 
 /* KPI cards */
@@ -82,54 +60,48 @@ body {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 15px;
-    box-shadow: 0 0 18px rgba(0,0,0,0.2);
+    padding: 16px;
+    box-shadow: 0 0 18px rgba(0, 0, 0, 0.2);
 }
 
 /* Status colors */
-.status-success { color: var(--success); }
-.status-warning { color: var(--warning); }
-.status-danger { color: var(--danger); }
+.status-success { color: var(--success) !important; }
+.status-warning { color: var(--warning) !important; }
+.status-danger { color: var(--danger) !important; }
 
 /* Chart area */
 canvas {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
     padding: 10px;
     border-radius: 12px;
 }
-p,
-div,
-span,
-label {
-    color: var(--text);
+
+.section {
+    margin-top: 25px;
 }
 </style>
 
+<!-- PAGE HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-
-    <h1>
+    <h1 style="color: #ffffff !important; font-weight: 700; font-size: 28px; margin: 0;">
         Analytics Dashboard
     </h1>
-
-
-<a href="{{ url_for('generate_report') }}"
-   class="btn btn-primary"
-   target="_blank">
-
-    📄 Generate Analytics Report
-
-</a>
-
+    <a href="{{ url_for('generate_report') }}"
+       class="btn btn-primary shadow-sm"
+       target="_blank">
+        📄 Generate Analytics Report
+    </a>
 </div>
 
-<div class="alert text-center shadow-sm"
+<!-- SYSTEM STATUS ALERT -->
+<div class="alert text-center shadow-sm mb-4"
      style="
         background: {% if critical_bins == 0 %}#0f5132{% elif critical_bins <= 2 %}#664d03{% else %}#842029{% endif %};
-        color: white;
-        border: none;
-        box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
      ">
-    <h5 class="mb-0">
+    <h5 class="mb-0" style="color: #ffffff !important;">
         System Status:
         {% if critical_bins == 0 %}
             🟢 OPTIMAL
@@ -141,27 +113,26 @@ label {
     </h5>
 </div>
 
-<div class="row mb-4 text-center">
-
+<!-- TOP 3 KPI CARDS -->
+<div class="row mb-4 text-center g-3">
     <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="text-muted">Route Efficiency</div>
-            <h2 class="status-success">{{ efficiency }}%</h2>
+        <div class="kpi-card h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted mb-1">Route Efficiency</div>
+            <h2 class="status-success mb-0">{{ efficiency }}%</h2>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="text-muted">Critical Bins</div>
-            <h2 class="status-danger">{{ critical_bins }}</h2>
+        <div class="kpi-card h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted mb-1">Critical Bins</div>
+            <h2 class="status-danger mb-0">{{ critical_bins }}</h2>
         </div>
     </div>
 
     <div class="col-md-4">
-        <div class="kpi-card">
-            <div class="text-muted">System Status</div>
-
-            <h2>
+        <div class="kpi-card h-100 d-flex flex-column justify-content-center">
+            <div class="text-muted mb-1">System Status</div>
+            <h2 class="mb-0">
                 {% if critical_bins == 0 %}
                     <span class="status-success">STABLE</span>
                 {% elif critical_bins <= 2 %}
@@ -170,135 +141,116 @@ label {
                     <span class="status-danger">ALERT</span>
                 {% endif %}
             </h2>
-
         </div>
     </div>
-
 </div>
 
-<div class="row">
-
+<!-- ROW 1: BIN FILL CHART & DSS STATUS PANEL -->
+<div class="row g-3">
     <!-- MAIN CHART -->
     <div class="col-md-8">
-        <div class="card shadow">
-
-            <div class="card-header"
-     style="color:white;background:#1d2b45;">
-    Bin Fill Analysis
-</div>
-
+        <div class="card shadow h-100">
+            <div class="card-header">
+                Bin Fill Analysis
+            </div>
             <div class="card-body">
                 <canvas id="binChart"></canvas>
             </div>
-
         </div>
     </div>
 
-    <!-- AI SYSTEM PANEL -->
+    <!-- DSS STATUS PANEL -->
     <div class="col-md-4">
-
         <div class="card shadow h-100">
-
-            <div class="card-header"
-     style="color:white;background:#1d2b45;">
-    Rule-Based DSS Status
-</div>
+            <div class="card-header">
+                Rule-Based DSS Status
+            </div>
 
             <div class="card-body">
-<div class="text-info mb-3">
-    <b>System Time:</b><br>
-    <span id="clock"></span>
-</div>
+                <div class="text-info mb-3">
+                    <b style="color: #38bdf8;">System Time:</b><br>
+                    <span id="clock" style="color: #ffffff; font-weight: bold;"></span>
+                </div>
 
-<div class="row mb-4 text-center">
+                <div class="row mb-3 text-center g-2">
+                    <!-- RISK CARD -->
+                    <div class="col-6">
+                        <div class="kpi-card h-100 d-flex flex-column justify-content-center p-2">
+                            <div class="text-muted" style="font-size: 13px;">Risk Index</div>
+                            <h3 class="mb-0 mt-1"
+                                {% if risk_score <= 20 %}
+                                    style="color:#00ff88 !important;"
+                                {% elif risk_score <= 50 %}
+                                    style="color:#ffcc00 !important;"
+                                {% else %}
+                                    style="color:#ff4d4d !important;"
+                                {% endif %}
+                            >
+                                {{ risk_score }}%
+                            </h3>
+                        </div>
+                    </div>
 
-    <!-- RISK CARD -->
-    <div class="col-md-6">
-        <div class="kpi-card">
-            <div class="text-muted">System Risk Index</div>
+                    <!-- SYSTEM STATE -->
+                    <div class="col-6">
+                        <div class="kpi-card h-100 d-flex flex-column justify-content-center p-2">
+                            <div class="text-muted" style="font-size: 13px;">DSS State</div>
+                            <h5 class="mb-0 mt-1" style="font-size: 14px; font-weight: bold;">
+                                {% if system_state == "OPTIMAL" %}
+                                    🟢 OPTIMAL
+                                {% elif system_state == "LOW RISK" %}
+                                    🟡 LOW
+                                {% elif system_state == "MEDIUM RISK" %}
+                                    🟠 MEDIUM
+                                {% else %}
+                                    🔴 HIGH
+                                {% endif %}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
 
-            <h2
-                {% if risk_score <= 20 %}
-                    style="color:#00ff88;"
-                {% elif risk_score <= 50 %}
-                    style="color:#ffcc00;"
-                {% else %}
-                    style="color:#ff4d4d;"
-                {% endif %}
-            >
-                {{ risk_score }}%
-            </h2>
-        </div>
-    </div>
+                <hr style="border-color: var(--border);">
 
-    <!-- SYSTEM STATE -->
-    <div class="col-md-6">
-        <div class="kpi-card">
-            <div class="text-muted">DSS System State</div>
+                <p style="color: #ffffff; font-weight: bold; margin-bottom: 4px;">DSS Recommendation:</p>
+                <p style="color: #cbd5e1; margin-bottom: 12px;">{{ recommendation }}</p>
 
-            <h2>
-                {% if system_state == "OPTIMAL" %}
-                    🟢 OPTIMAL
-                {% elif system_state == "LOW RISK" %}
-                    🟡 LOW RISK
-                {% elif system_state == "MEDIUM RISK" %}
-                    🟠 MEDIUM RISK
-                {% else %}
-                    🔴 HIGH RISK
-                {% endif %}
-            </h2>
-        </div>
-    </div>
+                <hr style="border-color: var(--border);">
 
-</div>
+                <p style="margin-bottom: 4px;"><b style="color: #ffffff;">Traditional Route:</b> {{ traditional_distance }} km</p>
+                <p style="margin-bottom: 4px;"><b style="color: #ffffff;">Optimized Route:</b> {{ optimized_distance }} km</p>
 
+                <hr style="border-color: var(--border);">
 
-<hr>
-
-                <p><b>DSS Recommendation:</b></p>
-
-                <p>{{ recommendation }}</p>
-
-                <hr>
-
-                <p><b>Traditional Route:</b> {{ traditional_distance }} km</p>
-                <p><b>Optimized Route:</b> {{ optimized_distance }} km</p>
-
-                <hr>
-
-                <p><b>Efficiency Gain:</b>
-                    <span style="color:#00ff88;">{{ efficiency }}%</span>
+                <p style="margin-bottom: 4px;"><b style="color: #ffffff;">Efficiency Gain:</b>
+                    <span style="color:#00ff88; font-weight: bold;">{{ efficiency }}%</span>
                 </p>
 
-                <hr>
+                <hr style="border-color: var(--border);">
 
-                <p><b>Network Waste Volume:</b><br>
+                <p style="margin-bottom: 0;">
+                    <b style="color: #ffffff;">Network Waste Volume:</b><br>
                     <span style="color:#4da3ff; font-size:18px; font-weight:bold;">{{ total_volume }} L</span><br>
                     <small class="text-muted">{{ network_capacity_pct }}% of {{ total_capacity }} L total capacity</small>
                 </p>
             </div>
-
         </div>
-
     </div>
-
 </div>
 
+<!-- NETWORK LOAD VISUALIZATION -->
 <div class="section">
-    <p style="color:white; font-size:18px;">
-    <b>Network Load Visualization</b>
-</p>
+    <p style="color: #ffffff; font-size: 18px; margin-bottom: 10px;">
+        <b>Network Load Visualization</b>
+    </p>
 
-<div class="d-flex gap-1">
-
+    <div class="d-flex gap-1">
         {% for i in range(10) %}
-
             <div style="
                 width: 18px;
                 height: 18px;
                 border-radius: 4px;
                 transition: 0.3s;
-
                 background:
                     {% if i < critical_bins %}
                         #ff4d4d
@@ -309,137 +261,104 @@ label {
                     {% endif %};
             ">
             </div>
-
         {% endfor %}
-
     </div>
-
 </div>
 
-<!-- RISK TREND ANALYSIS -->
-
+<!-- ROW 2: RISK TREND ANALYSIS -->
 <div class="row mt-4">
-
-    <div class="col-md-8">
-
-      <div class="card shadow border-0"
-         style="
-           background:#121a2a;
-           border-radius:16px;
-           overflow:hidden;
-         ">
-
-    <div class="card-header"
-         style="color:white;background:#1d2b45;">
-        Historical Risk Trend Monitoring
+    <div class="col-12">
+        <div class="card shadow border-0" style="background:#121a2a; border-radius:16px; overflow:hidden;">
+            <div class="card-header">
+                Historical Risk Trend Monitoring
+            </div>
+            <div class="card-body text-center">
+                <div style="height: 250px;">
+                    <canvas id="riskTrendChart"></canvas>
+                </div>
+                <p class="mt-3 text-muted" style="font-size: 14px;">
+                    Rule-Based DSS analyses historical IoT waste accumulation patterns to identify changing risk levels over time.
+                </p>
+            </div>
+        </div>
     </div>
-
-    <div class="card-body text-center">
-    
-        
-    <div style="height: 250px;">
-        <canvas id="riskTrendChart"></canvas>
-    </div>
-
-        <p class="mt-3 text-muted">
-            Rule-Based DSS analyses historical IoT waste accumulation patterns to identify changing risk levels over time.
-        </p>
-
-    </div>
-
 </div>
 
-</div>
-
+<!-- ROW 3: PERFORMANCE INTELLIGENCE COMPARISON -->
 <div class="card shadow mt-4 border-0">
-
     <div class="card-header text-white"
-     style="background: linear-gradient(90deg,#198754,#0dcaf0);">
-    Smart Collection Performance Intelligence
-</div>
+         style="background: linear-gradient(90deg, #198754, #0dcaf0);">
+        Smart Collection Performance Intelligence
+    </div>
 
     <div class="card-body">
-
-        <div class="row text-center">
-
+        <div class="row text-center g-3">
             <!-- TRADITIONAL -->
             <div class="col-md-4">
-                <div class="p-3 rounded shadow-sm border">
-
-                    <div class="text-danger fw-bold">Traditional System</div>
-                    <h2 class="mt-2">{{ traditional_distance }} km</h2>
-
-                    <div class="text-muted">Fixed routing logic</div>
-
+                <div class="p-3 rounded shadow-sm border h-100 d-flex flex-column justify-content-between"
+                     style="background: var(--panel-2); border-color: var(--border) !important;">
+                    <div>
+                        <div class="text-danger fw-bold">Traditional System</div>
+                        <h2 class="mt-2" style="color: #ffffff;">{{ traditional_distance }} km</h2>
+                        <div class="text-muted">Fixed routing logic</div>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-danger">Inefficient</span>
                     </div>
-
                 </div>
             </div>
 
             <!-- CENTER INSIGHT -->
             <div class="col-md-4">
-                <div class="p-4 rounded shadow bg-dark text-white">
-
-                    <div class="fw-bold">DSS Optimization Gain</div>
-
-                    <div style="font-size:40px; font-weight:bold;" class="{% if efficiency > 0 %}text-success{% else %}text-muted{% endif %} mt-2">
-                        {% if efficiency > 0 %}▲{% else %}—{% endif %} {{ efficiency }}%
+                <div class="p-3 rounded shadow bg-dark text-white h-100 d-flex flex-column justify-content-between"
+                     style="border: 1px solid var(--border);">
+                    <div>
+                        <div class="fw-bold" style="color: #ffffff;">DSS Optimization Gain</div>
+                        <div style="font-size:36px; font-weight:bold;"
+                             class="{% if efficiency > 0 %}text-success{% else %}text-muted{% endif %} mt-2">
+                            {% if efficiency > 0 %}▲{% else %}—{% endif %} {{ efficiency }}%
+                        </div>
+                        <div class="mt-2" style="color: #cbd5e1; font-size: 14px;">
+                            {% if efficiency > 0 %}
+                                Route optimisation saving detected
+                            {% else %}
+                                No critical bins — collection not required
+                            {% endif %}
+                        </div>
                     </div>
-
-                    <div class="mt-2">
-                        {% if efficiency > 0 %}
-                            Route optimisation saving detected
-                        {% else %}
-                            No critical bins — collection not required
-                        {% endif %}
-                    </div>
-
                 </div>
             </div>
 
             <!-- SMART SYSTEM -->
             <div class="col-md-4">
-                <div class="p-3 rounded shadow-sm border">
-
-                    <div class="text-success fw-bold">IoT Smart System</div>
-                    <h2 class="mt-2">{{ optimized_distance }} km</h2>
-
-                    <div class="text-muted">Optimised collection route</div>
-
+                <div class="p-3 rounded shadow-sm border h-100 d-flex flex-column justify-content-between"
+                     style="background: var(--panel-2); border-color: var(--border) !important;">
+                    <div>
+                        <div class="text-success fw-bold">Rule-Based DSS System</div>
+                        <h2 class="mt-2" style="color: #ffffff;">{{ optimized_distance }} km</h2>
+                        <div class="text-muted">Optimised collection route</div>
+                    </div>
                     <div class="mt-3">
                         <span class="badge bg-success">Efficient</span>
                     </div>
-
                 </div>
             </div>
-
         </div>
-
-        
 
         <!-- BOTTOM INSIGHT STRIP -->
-        <div class="alert alert-dark mt-4 text-center">
-
-            <b>System Insight:</b>
+        <div class="p-3 rounded text-center mt-4"
+             style="background: var(--panel-2); border: 1px solid var(--border); color: #e2e8f0;">
+            <b style="color: #38bdf8;">System Insight:</b>
             Smart routing reduces operational load and improves collection efficiency in real-time IoT simulation.
-
         </div>
-
     </div>
 </div>
 
-
-
-
-<!-- Chart.js -->
+<!-- Chart.js Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 const values = {{ values | tojson }};
-
-
 
 /* BAR CHART */
 new Chart(document.getElementById('binChart'), {
@@ -449,101 +368,81 @@ new Chart(document.getElementById('binChart'), {
         datasets: [{
             label: 'Fill Level (%)',
             data: values,
+            backgroundColor: values.map(v => v >= 80 ? '#ef4444' : (v >= 50 ? '#facc15' : '#22c55e')),
             borderWidth: 1
         }]
     },
     options: {
         responsive: true,
+        plugins: {
+            legend: {
+                labels: { color: '#e2e8f0' }
+            }
+        },
         scales: {
             y: {
                 beginAtZero: true,
-                max: 100
+                max: 100,
+                ticks: { color: '#cbd5e1' },
+                grid: { color: 'rgba(255,255,255,0.06)' }
+            },
+            x: {
+                ticks: { color: '#cbd5e1' },
+                grid: { display: false }
             }
         }
     }
 });
 
+/* LINE CHART */
 new Chart(document.getElementById('riskTrendChart'), {
-
     type: 'line',
-
     data: {
-
         labels: {{ risk_labels | tojson }},
-
-    datasets: [{
-
-        label: 'Risk Level (%)',
-
-        data: {{ risk_history | tojson }},
-
-        fill: true,
-
-        tension: 0.45,
-
-        borderWidth: 3,
-
-        pointRadius: 5,
-
-        pointHoverRadius: 8
-
-    }]
+        datasets: [{
+            label: 'Risk Level (%)',
+            data: {{ risk_history | tojson }},
+            fill: true,
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            tension: 0.45,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointHoverRadius: 8
+        }]
     },
-
     options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    
-
-    plugins: {
-        legend: {
-            display: true
-        }
-    },
-
-    scales: {
-
-        y: {
-            beginAtZero: true,
-            max: 100,
-
-            ticks: {
-                color: "#ffffff"
-            },
-
-            grid: {
-                color: "rgba(255,255,255,0.08)"
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: '#e2e8f0' }
             }
         },
-
-        x: {
-
-            ticks: {
-                color: "#ffffff"
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { color: "#cbd5e1" },
+                grid: { color: "rgba(255,255,255,0.08)" }
             },
-
-            grid: {
-                display: false
+            x: {
+                ticks: { color: "#cbd5e1" },
+                grid: { display: false }
             }
         }
     }
-}
-
 });
-
-
 </script>
 
 <script>
 function updateClock() {
     const now = new Date();
-
     const timeString = now.toLocaleTimeString('en-GB', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
     });
-
     document.getElementById("clock").innerText = timeString;
 }
 
