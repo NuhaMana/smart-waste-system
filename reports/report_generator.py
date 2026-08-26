@@ -4,6 +4,7 @@ matplotlib.use("Agg")
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 from datetime import datetime
 
@@ -110,23 +111,33 @@ def generate_report_data():
             "BIN-004": "#dc3545",
             "BIN-005": "#9b59b6",
         }
-        plt.figure(figsize=(9, 4))
-        for bin_id, group in df.groupby("bin_id"):
-            plt.plot(
-                group["timestamp"],
-                group["fill_level"],
+        fig, ax = plt.subplots(figsize=(9, 4))
+        
+        # Prepare timestamp as datetime for clean, formatted date scaling
+        df_chart = df.copy()
+        df_chart["dt"] = pd.to_datetime(df_chart["timestamp"], errors="coerce")
+        
+        for bin_id, group in df_chart.groupby("bin_id"):
+            sample_group = group.tail(60)
+            ax.plot(
+                sample_group["dt"],
+                sample_group["fill_level"],
                 label=bin_id,
                 linewidth=2,
                 color=bin_colours.get(bin_id, "#333333")
             )
-        plt.axhline(y=80, color="red", linestyle="--", linewidth=1, label="Critical threshold (80%)")
-        plt.title("Historical Waste Fill Level Trend — Per Bin")
-        plt.xlabel("Time")
-        plt.ylabel("Fill Level (%)")
-        plt.ylim(0, 105)
-        plt.xticks(rotation=45)
-        plt.legend(loc="upper left", fontsize=8)
-        plt.grid(alpha=0.3)
+        ax.axhline(y=80, color="red", linestyle="--", linewidth=1, label="Critical threshold (80%)")
+        ax.set_title("Historical Waste Fill Level Trend — Per Bin")
+        ax.set_xlabel("Time (HH:MM)")
+        ax.set_ylabel("Fill Level (%)")
+        ax.set_ylim(0, 105)
+        
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=8))
+        fig.autofmt_xdate(rotation=30)
+        
+        ax.legend(loc="upper left", fontsize=8)
+        ax.grid(alpha=0.3)
         plt.tight_layout()
         plt.savefig(trend_path, dpi=150)
     finally:
